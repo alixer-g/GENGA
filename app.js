@@ -1,13 +1,13 @@
-
 /* =====================================================
    GENGA COLLECTIBLES STORE
    Complete front-end application
-   Browse-first demo version
    ===================================================== */
-
 /* -------------------- PRODUCTS -------------------- */
 
-const products = [
+
+
+
+const products = readStorage('gengaProducts', null) || [
   {
     id: 1,
     name: 'Banana Fish Acrylic Keychain Collection',
@@ -172,11 +172,12 @@ const products = [
   }
 
 ];
+localStorage.setItem('gengaProducts', JSON.stringify(products));
 
 /* -------------------- APP STATE -------------------- */
 
 const state = {
-  page: 'login',
+  page: 'home',
   previous: 'onhand',
   selected: 1,
   quantity: 1,
@@ -188,8 +189,8 @@ const state = {
   favorites: [],
   faqOpen: 0,
   orders: [],
-  pendingPage: null,
-  pendingAction: null
+  pendingAddToCart: null,
+  pendingDestination: null
 };
 
 const app = document.querySelector('#app');
@@ -198,23 +199,66 @@ const scrim = document.querySelector('#scrim');
 const toastEl = document.querySelector('#toast');
 
 const PUBLIC_PAGES = [
-  'home',
-  'onhand',
-  'preorder',
-  'product',
-  'about',
-  'faq',
-  'login',
-  'register'
+  'home', 'onhand', 'preorder', 'product', 'about', 'faq',
+  'login', 'register'
 ];
 
-const ACCOUNT_PAGES = [
-  'cart',
-  'checkout',
-  'favorites',
-  'profile',
-  'history'
+const PROTECTED_PAGES = [
+  'cart', 'checkout', 'favorites', 'profile', 'history'
 ];
+const ADMIN_PAGES = ['admin'];
+const ADMIN_EMAIL = 'admin@genga.ph';
+const ADMIN_PASSWORD = 'GengaAdmin2026!';
+
+function isAdmin() {
+  const session = getCurrentUser();
+  const user = session && getUsers().find(item => item.email === session.email);
+  return Boolean(session && user && user.role === 'admin');
+}
+function getAllOrders() {
+  // Merge orders already stored in each customer's history with the admin list.
+  // This lets the dashboard see orders created before the admin feature was added.
+  const allOrders = readStorage('gengaAllOrders', []);
+  const users = getUsers();
+  const byId = new Map();
+
+  allOrders.forEach(order => {
+    if (order && order.id) byId.set(String(order.id), order);
+  });
+
+  users.forEach(user => {
+    const customerOrders = readStorage('gengaOrders_' + user.email, []);
+    customerOrders.forEach(order => {
+      if (!order || !order.id) return;
+      const key = String(order.id);
+      const existing = byId.get(key);
+      byId.set(key, existing ? { ...existing, ...order } : order);
+    });
+  });
+
+  const merged = Array.from(byId.values()).sort((a, b) => {
+    const aId = Number(String(a.id).replace(/\\D/g, '')) || 0;
+    const bId = Number(String(b.id).replace(/\\D/g, '')) || 0;
+    return bId - aId;
+  });
+
+  localStorage.setItem('gengaAllOrders', JSON.stringify(merged));
+  return merged;
+}
+function saveAllOrders(orders) {
+  localStorage.setItem('gengaAllOrders', JSON.stringify(orders));
+}
+function saveProducts() {
+  localStorage.setItem('gengaProducts', JSON.stringify(products));
+}
+
+(function seedDemoAdmin() {
+  const users = getUsers();
+  if (!users.some(user => user.email === ADMIN_EMAIL)) {
+    users.push({ name: 'GENGA Administrator', email: ADMIN_EMAIL, password: ADMIN_PASSWORD, role: 'admin' });
+    localStorage.setItem('gengaDemoUsers', JSON.stringify(users));
+  }
+})();
 
 /* -------------------- STORAGE HELPERS -------------------- */
 
@@ -329,14 +373,14 @@ function closeDrawer() {
 /* -------------------- NAVIGATION -------------------- */
 
 function go(page) {
+  if (ADMIN_PAGES.includes(page) && !isAdmin()) { notify('Admin access only.'); return; }
   if (page === 'logout') {
     logoutDemo();
     return;
   }
 
-  // Browsing pages are public. Account pages require authentication.
-  if (ACCOUNT_PAGES.includes(page) && !isLoggedIn()) {
-    state.pendingPage = page;
+  if (PROTECTED_PAGES.includes(page) && !isLoggedIn()) {
+    state.pendingDestination = page;
     state.page = 'login';
     closeDrawer();
     render();
@@ -344,17 +388,11 @@ function go(page) {
     return;
   }
 
-  // Logged-in users do not need to revisit the auth pages.
-  if (['login', 'register'].includes(page) && isLoggedIn()) {
-    page = 'home';
-  }
-
   if (page === 'product') {
     state.previous = state.page;
   }
 
   state.page = page;
-
   closeDrawer();
   render();
 }
@@ -400,7 +438,6 @@ function card(product) {
 
   return `
     <article class="product-card">
-
       <img
         class="product-image"
         data-product="${product.id}"
@@ -416,7 +453,6 @@ function card(product) {
       >${favorite ? '♥' : '♡'}</button>
 
       <div class="product-body">
-
         <span class="pill">${product.badge}</span>
 
         <h3 class="product-name">${product.name}</h3>
@@ -424,7 +460,6 @@ function card(product) {
         <div class="price">${money(product.price)}</div>
 
         <div class="product-actions">
-
           <button
             class="btn"
             data-product="${product.id}"
@@ -434,7 +469,6 @@ function card(product) {
             class="btn light"
             data-add="${product.id}"
           >Add to cart</button>
-
         </div>
       </div>
     </article>
@@ -503,7 +537,6 @@ function collection(type) {
       </div>
 
       <div class="collection-panel">
-
         <div class="search-row">
           <input
             class="search"
@@ -514,49 +547,59 @@ function collection(type) {
           >
         </div>
 
+       
         <div class="filters">
+          <div class="custom-select" id="sortDropdown">
+            <button
+              type="button"
+              class="custom-select-trigger"
+              id="sortTrigger"
+              aria-expanded="false"
+            >
+              <span id="sortLabel">
+                ${({
+                  popularity: 'Popularity',
+                  'price-up': 'Price: low to high',
+                  'price-down': 'Price: high to low',
+                  name: 'Name A–Z'
+                })[state.sort] || 'Popularity'}
+              </span>
+              <span>⌄</span>
+            </button>
 
-          <select id="sort" aria-label="Sort products">
-            <option value="popularity"
-              ${state.sort === 'popularity' ? 'selected' : ''}>
-              Popularity
-            </option>
+            <div class="custom-select-menu" id="sortMenu" hidden>
+              <button type="button" data-sort="popularity">Popularity</button>
+              <button type="button" data-sort="price-up">Price: low to high</button>
+              <button type="button" data-sort="price-down">Price: high to low</button>
+              <button type="button" data-sort="name">Name A–Z</button>
+            </div>
+          </div>
 
-            <option value="price-up"
-              ${state.sort === 'price-up' ? 'selected' : ''}>
-              Price: low to high
-            </option>
+          <div class="custom-select" id="priceDropdown">
+            <button
+              type="button"
+              class="custom-select-trigger"
+              id="priceTrigger"
+              aria-expanded="false"
+            >
+              <span id="priceLabel">
+                ${({
+                  all: 'All Prices',
+                  low: 'Under ₱500',
+                  mid: '₱500–₱1,999',
+                  high: '₱2,000+'
+                })[state.price] || 'All Prices'}
+              </span>
+              <span>⌄</span>
+            </button>
 
-            <option value="price-down"
-              ${state.sort === 'price-down' ? 'selected' : ''}>
-              Price: high to low
-            </option>
-
-            <option value="name"
-              ${state.sort === 'name' ? 'selected' : ''}>
-              Name A–Z
-            </option>
-          </select>
-
-          <select id="price" aria-label="Filter by price">
-            <option value="all">All prices</option>
-
-            <option value="low"
-              ${state.price === 'low' ? 'selected' : ''}>
-              Under ₱500
-            </option>
-
-            <option value="mid"
-              ${state.price === 'mid' ? 'selected' : ''}>
-              ₱500–₱1,999
-            </option>
-
-            <option value="high"
-              ${state.price === 'high' ? 'selected' : ''}>
-              ₱2,000+
-            </option>
-          </select>
-
+            <div class="custom-select-menu" id="priceMenu" hidden>
+              <button type="button" data-price="all">All Prices</button>
+              <button type="button" data-price="low">Under ₱500</button>
+              <button type="button" data-price="mid">₱500–₱1,999</button>
+              <button type="button" data-price="high">₱2,000+</button>
+            </div>
+          </div>
         </div>
 
         <div class="product-grid">
@@ -564,7 +607,6 @@ function collection(type) {
             ? list.map(card).join('')
             : '<p class="empty">No products found. Try another search.</p>'}
         </div>
-
       </div>
     `,
     'cart'
@@ -573,16 +615,12 @@ function collection(type) {
 
 /* -------------------- HOMEPAGE -------------------- */
 
+
 function home() {
   return `
     <section class="page">
-
       <div class="hero">
-
-        <p class="eyebrow">
-          THE ART BEHIND EVERY COLLECTION
-        </p>
-
+        <p class="eyebrow">THE ART BEHIND EVERY COLLECTION</p>
         <h1>GENGA</h1>
 
         <p>
@@ -595,21 +633,11 @@ function home() {
           <button class="btn full" data-page="onhand">
             ON-HAND ITEMS
           </button>
-
-          <button class="btn full light" data-page="preorder">
-            PRE-ORDER NOW
-          </button>
         </div>
-
-        <div class="hero-art">
-          <img src="Logo.png" alt="GENGA Logo">
-        </div>
-
       </div>
 
       <div class="cream-page">
         <div class="content">
-
           <div class="section-head">
             <p class="eyebrow">FRESH FINDS FOR YOUR SHELF</p>
             <h2 class="section-title">PRE-ORDER NOW!</h2>
@@ -617,62 +645,119 @@ function home() {
 
           <div class="product-grid">
             ${[
-              products[3],
-              products[6],
-              products[8]
+              products[12],
+              products[13]
             ].map(card).join('')}
           </div>
 
           <div class="hero-actions">
-            <button class="btn full" data-page="onhand">
+            <button class="btn full" data-page="preorder">
               BROWSE COLLECTION
             </button>
-
-            <button class="btn full" data-page="preorder">
-              PASABUY / PRE-ORDER
+            <button class="btn full" data-page="pasabuy">
+              PASABUY
             </button>
           </div>
 
-          <div class="two-col" style="margin-top:50px">
 
+          <div class="two-col" style="margin-top:50px">
             <div class="feature-card">
               <h3>COLLECT WITH CONFIDENCE</h3>
-              <p>
-                Find collectibles and review your order history.
-              </p>
+              <p>Find collectibles and review your order history.</p>
             </div>
 
             <div class="feature-card">
               <h3>NEED A HAND?</h3>
-              <p>
-                Learn about payment, delivery, and packaging.
-              </p>
-
-              <button class="btn" data-page="faq">
-                READ FAQ
-              </button>
+              <p>Learn about payment, delivery, and packaging.</p>
+              <button class="btn" data-page="faq">READ FAQ</button>
             </div>
-
           </div>
         </div>
       </div>
-
     </section>
   `;
+}
+
+
+/* -------------------- PASABUY PAGE -------------------- */
+
+function pasabuy() {
+  return shell(
+    'PASABUY',
+    `
+      <section class="pasabuy-section" id="pasabuy">
+        <p class="pasabuy-eyebrow">FROM JAPAN TO YOUR SHELF</p>
+
+        <h1>Want us to Pasabuy something for you?</h1>
+
+        <p class="pasabuy-description">
+          Send us the item link or a photo. We'll help source it,
+          confirm the price, and keep you updated all the way home.
+        </p>
+
+        <div class="pasabuy-links">
+          <a class="pasabuy-link" href="mailto:hello@genga.ph">
+            <span class="pasabuy-icon">G</span>
+            <span class="pasabuy-link-text">
+              <small>EMAIL · CONTACT US</small>
+              <strong>hello@genga.ph</strong>
+              <small>Email your product link or request</small>
+            </span>
+            <span class="pasabuy-arrow">↗</span>
+          </a>
+
+          <a class="pasabuy-link"
+             href="https://www.facebook.com/"
+             target="_blank" rel="noopener noreferrer">
+            <span class="pasabuy-icon">f</span>
+            <span class="pasabuy-link-text">
+              <small>FACEBOOK PAGE</small>
+              <strong>Genga PH</strong>
+              <small>Chat with our Pasabuy team</small>
+            </span>
+            <span class="pasabuy-arrow">↗</span>
+          </a>
+
+          <a class="pasabuy-link"
+             href="https://www.tiktok.com/@genga.ph"
+             target="_blank" rel="noopener noreferrer">
+            <span class="pasabuy-icon">♪</span>
+            <span class="pasabuy-link-text">
+              <small>TIKTOK</small>
+              <strong>@genga.ph</strong>
+              <small>See arrivals and live claims</small>
+            </span>
+            <span class="pasabuy-arrow">↗</span>
+          </a>
+
+          <a class="pasabuy-link"
+             href="https://www.instagram.com/genga.collects/"
+             target="_blank" rel="noopener noreferrer">
+            <span class="pasabuy-icon">◎</span>
+            <span class="pasabuy-link-text">
+              <small>INSTAGRAM</small>
+              <strong>@genga.collects</strong>
+              <small>Message us or browse drops</small>
+            </span>
+            <span class="pasabuy-arrow">↗</span>
+          </a>
+        </div>
+      </section>
+    `,
+    'home'
+  );
 }
 
 /* -------------------- PRODUCT DETAILS -------------------- */
 
 function productDetail(id) {
   const product = find(id) || products[0];
-
   state.selected = product.id;
 
   return shell(
     'PRODUCT DETAILS',
     `
       <div class="detail-layout">
-
         <img
           class="detail-image"
           src="${asset(product.image)}"
@@ -680,19 +765,14 @@ function productDetail(id) {
         >
 
         <div class="detail-info">
-
           <span class="pill">${product.badge}</span>
-
           <h1>${product.name}</h1>
-
           <div class="price">${money(product.price)}</div>
-
           <p class="intro">${product.desc}</p>
 
           ${product.options ? `
             <div class="field" style="margin:24px 0">
               <label for="option">Choose option</label>
-
               <select id="option">
                 ${product.options.map(option => `
                   <option ${option === state.option ? 'selected' : ''}>
@@ -704,7 +784,6 @@ function productDetail(id) {
           ` : ''}
 
           <div class="detail-buttons">
-
             <div class="qty">
               <button data-qty="-">−</button>
               <strong id="qtyValue">${state.quantity}</strong>
@@ -721,7 +800,6 @@ function productDetail(id) {
               class="btn full light"
               data-order="${product.id}"
             >ORDER NOW</button>
-
           </div>
         </div>
       </div>
@@ -732,31 +810,26 @@ function productDetail(id) {
 
 /* -------------------- SHOPPING CART -------------------- */
 
-function addToCart(id, qty = state.quantity, afterLogin = 'cart') {
+function addToCart(id, qty = state.quantity, nextPage = 'cart') {
   const product = find(id);
-  if (!product) return;
+  if (!product) return false;
 
   if (!isLoggedIn()) {
-    const optionSelect = document.querySelector('#option');
-    if (optionSelect) state.option = optionSelect.value;
-
-    state.pendingAction = {
+    state.pendingAddToCart = {
       id: product.id,
-      qty: Math.max(1, Number(qty) || 1),
+      qty,
       option: product.options ? state.option : '',
-      afterLogin
+      nextPage
     };
 
-    state.pendingPage = afterLogin;
     state.page = 'login';
     closeDrawer();
     render();
     notify('Please log in or register to add items to your cart.');
-    return;
+    return false;
   }
 
   const option = product.options ? state.option : '';
-
   const existing = state.cart.find(item =>
     item.id === product.id && item.option === option
   );
@@ -764,15 +837,12 @@ function addToCart(id, qty = state.quantity, afterLogin = 'cart') {
   if (existing) {
     existing.qty += qty;
   } else {
-    state.cart.push({
-      ...product,
-      qty,
-      option
-    });
+    state.cart.push({ ...product, qty, option });
   }
 
   saveUserData();
   notify('Added to cart: ' + product.name);
+  return true;
 }
 
 function cart() {
@@ -793,19 +863,11 @@ function cart() {
         <div class="cart-list">
           ${state.cart.map(item => `
             <article class="cart-item">
-
-              <img
-                src="${asset(item.image)}"
-                alt="${item.name}"
-              >
+              <img src="${asset(item.image)}" alt="${item.name}">
 
               <div>
                 <h3>${item.name}</h3>
-
-                <p>
-                  ${item.option ? 'Option: ' + item.option : ''}
-                </p>
-
+                <p>${item.option ? 'Option: ' + item.option : ''}</p>
                 <div class="price">${money(item.price)}</div>
 
                 <div class="qty small">
@@ -819,7 +881,6 @@ function cart() {
                 class="remove"
                 data-remove="${item.id}-${item.option}"
               >Remove</button>
-
             </article>
           `).join('')}
         </div>
@@ -836,9 +897,7 @@ function cart() {
         <div class="empty">
           <h2>Your cart is empty.</h2>
           <p>Find something special for your collection.</p>
-          <button class="btn" data-page="onhand">
-            BROWSE ITEMS
-          </button>
+          <button class="btn" data-page="onhand">BROWSE ITEMS</button>
         </div>
       `}
     `,
@@ -877,9 +936,7 @@ function checkout() {
       </div>
 
       <form id="checkoutForm">
-
         <div class="form-grid" style="margin:24px 0">
-
           <div class="field full-field">
             <label for="customerName">Full name</label>
             <input
@@ -912,7 +969,6 @@ function checkout() {
               placeholder="House no., street, barangay, city"
             ></textarea>
           </div>
-
         </div>
 
         <h2 style="font:28px var(--display);color:var(--teal)">
@@ -936,15 +992,10 @@ function checkout() {
         </label>
 
         <label class="payment-option">
-          <input
-            type="radio"
-            name="payment"
-            value="50% Online + 50% COD"
-            checked
-          >
+          <input type="radio" name="payment" value="Cash on Delivery">
           <span>
-            <strong>50% Online + 50% COD</strong>
-            <small>Half online, remaining balance on delivery</small>
+            <strong>Cash on Delivery</strong>
+            <small>Pay when your order arrives</small>
           </span>
         </label>
 
@@ -953,14 +1004,7 @@ function checkout() {
           <strong>${money(total)}</strong>
         </div>
 
-        <button class="btn full" type="submit">
-          PLACE DEMO ORDER
-        </button>
-
-        <p class="muted">
-          Demo only. No real payment will be processed.
-        </p>
-
+        <button class="btn full" type="submit">PLACE ORDER</button>
       </form>
     `
   );
@@ -977,20 +1021,23 @@ function favorites() {
     'FAVORITES',
     `
       <div class="section-head">
-        <p class="eyebrow">SAVED FOR LATER</p>
-        <h1 class="section-title">YOUR WISHLIST</h1>
+        <p class="eyebrow">YOUR PERSONAL COLLECTION</p>
+        <h1 class="section-title">SAVED ITEMS</h1>
       </div>
 
-      ${list.length
-        ? `<div class="product-grid">${list.map(card).join('')}</div>`
-        : `
-          <div class="empty">
-            <h2>No favorites saved yet.</h2>
-            <button class="btn" data-page="onhand">Explore items</button>
-          </div>
-        `}
+      ${list.length ? `
+        <div class="product-grid">
+          ${list.map(card).join('')}
+        </div>
+      ` : `
+        <div class="empty">
+          <h2>No favorites yet.</h2>
+          <p>Save items you love and find them here later.</p>
+          <button class="btn" data-page="onhand">Browse items</button>
+        </div>
+      `}
     `,
-    'cart'
+    'home'
   );
 }
 
@@ -1002,41 +1049,23 @@ function profile() {
   return shell(
     'PROFILE',
     `
-      <div class="profile-avatar">♙</div>
-
-      <h1 class="profile-name">${session.name}</h1>
-
-      <div class="profile-data">
-
-        <div>
-          <strong>FULL NAME</strong>
-          <span>${session.name}</span>
-        </div>
-
-        <div>
-          <strong>EMAIL</strong>
-          <span>${session.email}</span>
-        </div>
-
-        <div>
-          <strong>ORDERS</strong>
-          <span>${state.orders.length} demo order(s)</span>
-        </div>
-
+      <div class="section-head">
+        <p class="eyebrow">YOUR ACCOUNT</p>
+        <h1 class="section-title">MY PROFILE</h1>
       </div>
 
-      <div class="profile-links">
-        <button data-page="favorites">
-          FAVORITES <span>♡</span>
-        </button>
+      <div class="feature-card">
+        <div class="field">
+          <label>Full name</label>
+          <p>${session ? session.name : ''}</p>
+        </div>
 
-        <button data-page="history">
-          TRANSACTION HISTORY <span>→</span>
-        </button>
+        <div class="field">
+          <label>Email address</label>
+          <p>${session ? session.email : ''}</p>
+        </div>
 
-        <button data-page="logout">
-          LOG OUT <span>→</span>
-        </button>
+        <button class="btn" data-page="history">VIEW ORDER HISTORY</button>
       </div>
     `,
     'home'
@@ -1050,36 +1079,29 @@ function history() {
     'TRANSACTION HISTORY',
     `
       <div class="section-head">
-        <p class="eyebrow">YOUR PAST ORDERS</p>
-        <h1 class="section-title">COLLECTION JOURNEY</h1>
+        <p class="eyebrow">YOUR PAST PURCHASES</p>
+        <h1 class="section-title">ORDER HISTORY</h1>
       </div>
 
-      ${state.orders.length
-        ? state.orders.map(order => `
-          <article class="history-card">
-
-            <div class="history-top">
-              <strong class="history-id">${order.id}</strong>
-
-              <span class="status ${order.status.toLowerCase()}">
-                ${order.status.toUpperCase()}
-              </span>
-            </div>
-
-            <div class="history-date">${order.date}</div>
-
-            <h3>${order.name}</h3>
-
-            <div class="history-price">${money(order.price)}</div>
-
-          </article>
-        `).join('')
-        : `
-          <div class="empty">
-            <h2>No orders yet.</h2>
-            <button class="btn" data-page="onhand">Browse items</button>
-          </div>
-        `}
+      ${state.orders.length ? `
+        <div class="history-list">
+          ${state.orders.map(order => `
+            <article class="feature-card">
+              <h3>${order.id}</h3>
+              <p>${order.date}</p>
+              <p>${order.name}</p>
+              <p>Total: <strong>${money(order.price)}</strong></p>
+              <p>Status: <strong>${order.status}</strong></p>
+            </article>
+          `).join('')}
+        </div>
+      ` : `
+        <div class="empty">
+          <h2>No orders yet.</h2>
+          <p>Your completed orders will appear here.</p>
+          <button class="btn" data-page="onhand">START SHOPPING</button>
+        </div>
+      `}
     `,
     'home'
   );
@@ -1091,7 +1113,7 @@ function faq() {
   const items = [
     [
       'Payment Methods',
-      'Choose a payment option during checkout. This demo does not collect real payments.'
+      'Choose a payment option during checkout. This does not collect real payments.'
     ],
     [
       'Delivery Methods',
@@ -1099,7 +1121,7 @@ function faq() {
     ],
     [
       'Track Order',
-      'Your demo order statuses are available in Transaction History.'
+      'Your order statuses are available in Transaction History.'
     ],
     [
       'Packaging',
@@ -1111,22 +1133,24 @@ function faq() {
     'FAQ',
     `
       <div class="section-head">
-        <p class="eyebrow">NEED A HAND?</p>
+        <p class="eyebrow">NEED TO KNOW</p>
         <h1 class="section-title">FREQUENTLY ASKED QUESTIONS</h1>
       </div>
 
-      ${items.map((item, index) => `
-        <div class="faq-item">
-          <button class="faq-question" data-faq="${index}">
-            ${item[0]}
-            <span>${state.faqOpen === index ? '−' : '+'}</span>
-          </button>
+      <div class="faq-list">
+        ${items.map((item, index) => `
+          <article class="faq-item">
+            <button class="faq-question" data-faq="${index}">
+              <span>${item[0]}</span>
+              <span>${state.faqOpen === index ? '−' : '+'}</span>
+            </button>
 
-          ${state.faqOpen === index
-            ? `<div class="faq-answer">${item[1]}</div>`
-            : ''}
-        </div>
-      `).join('')}
+            ${state.faqOpen === index ? `
+              <p class="faq-answer">${item[1]}</p>
+            ` : ''}
+          </article>
+        `).join('')}
+      </div>
     `,
     'home'
   );
@@ -1138,19 +1162,22 @@ function about() {
   return shell(
     'ABOUT US',
     `
-      <div class="about-rule"></div>
+      <div class="section-head">
+        <p class="eyebrow">WELCOME TO GENGA</p>
+        <h1 class="section-title">FOR THE LOVE OF COLLECTING</h1>
+      </div>
 
-      <h1 class="section-title" style="text-align:center">
-        ABOUT GENGA
-      </h1>
-
-      <p class="about-copy">
-        Genga is an online shop concept for anime fans and collectors
-        in the Philippines. Discover figures, plushies, keychains,
-        and other collectibles while growing your collection.
-      </p>
-
-      <div class="about-rule"></div>
+      <div class="feature-card">
+        <p>
+          GENGA is a collectibles storefront for anime fans
+          looking for figures, plushies, and character merchandise.
+        </p>
+        <p>
+          Browse available items and pre-orders. Create an account
+          to use the cart, save favorites, and view order history.
+        </p>
+        <button class="btn" data-page="onhand">EXPLORE COLLECTION</button>
+      </div>
     `,
     'home'
   );
@@ -1162,27 +1189,23 @@ function login() {
   return shell(
     'LOGIN',
     `
-      <section class="auth-section">
+      <div class="auth-section">
+        <div class="section-head">
+          <p class="eyebrow">WELCOME BACK</p>
+          <h1 class="section-title">LOG IN</h1>
+          <p>Log in to add items to your cart and manage your account.</p>
+        </div>
 
-        <p class="eyebrow">WELCOME BACK, COLLECTOR</p>
-
-        <h1 class="auth-title">LOGIN</h1>
-
-        <p class="auth-description">
-          Sign in to add items to your cart, save favorites, and manage your orders.
-        </p>
-
-        <form class="auth-form" id="loginForm">
-
+        <form id="loginForm" class="auth-form">
           <div class="field">
             <label for="loginEmail">Email address</label>
             <input
               id="loginEmail"
-              name="email"
               type="email"
+              name="email"
               autocomplete="email"
-              placeholder="you@example.com"
               required
+              placeholder="you@example.com"
             >
           </div>
 
@@ -1190,28 +1213,32 @@ function login() {
             <label for="loginPassword">Password</label>
             <input
               id="loginPassword"
-              name="password"
               type="password"
+              name="password"
               autocomplete="current-password"
-              placeholder="Enter your password"
               required
+              placeholder="Enter your password"
             >
           </div>
 
-          <p class="auth-error" id="loginError"></p>
+          <p id="loginError" class="form-error" style="display:none"></p>
 
-          <button class="btn" type="submit">LOGIN</button>
+          <button class="btn full" type="submit">LOG IN</button>
 
+          <p class="auth-switch">
+            Don't have an account?
+            <button class="text-btn" type="button" data-page="register">
+              Register
+            </button>
+          </p>
+
+          <button class="text-btn" type="button" data-page="home">
+            Continue browsing as guest
+          </button>
         </form>
-
-        <div class="auth-switch">
-          Don't have an account?
-          <button data-page="register">Register here</button>
-        </div>
-
-      </section>
+      </div>
     `,
-    'login'
+    'home'
   );
 }
 
@@ -1221,85 +1248,117 @@ function register() {
   return shell(
     'REGISTER',
     `
-      <section class="auth-section">
-
-        <p class="eyebrow">JOIN THE COLLECTION</p>
-
-        <h1 class="auth-title">CREATE ACCOUNT</h1>
-
-        <p class="auth-description">
-          Create an account to add items to your cart, save favorites, and manage your orders.
-        </p>
-
-        <form class="auth-form" id="registerForm">
-
-          <div class="field">
-            <label for="regName">Full name</label>
-            <input
-              id="regName"
-              name="name"
-              type="text"
-              autocomplete="name"
-              placeholder="Your full name"
-              required
-            >
-          </div>
-
-          <div class="field">
-            <label for="regEmail">Email address</label>
-            <input
-              id="regEmail"
-              name="email"
-              type="email"
-              autocomplete="email"
-              placeholder="you@example.com"
-              required
-            >
-          </div>
-
-          <div class="field">
-            <label for="regPassword">Password</label>
-            <input
-              id="regPassword"
-              name="password"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              placeholder="At least 8 characters"
-              required
-            >
-          </div>
-
-          <div class="field">
-            <label for="regConfirm">Confirm password</label>
-            <input
-              id="regConfirm"
-              name="confirmPassword"
-              type="password"
-              autocomplete="new-password"
-              minlength="8"
-              placeholder="Re-enter your password"
-              required
-            >
-          </div>
-
-          <p class="auth-error" id="registerError"></p>
-
-          <button class="btn" type="submit">
-            CREATE ACCOUNT
-          </button>
-
-        </form>
-
-        <div class="auth-switch">
-          Already registered?
-          <button data-page="login">Login here</button>
+      <div class="auth-section">
+        <div class="section-head">       
+<img
+  class="hero-logo"
+  src="Logo.png"
+  alt="GENGA — The Art Behind Every Collection"
+>
         </div>
 
-      </section>
+        <form id="registerForm" class="auth-form">
+          <div class="field">
+            <label for="registerName">Full name</label>
+            <input
+              id="registerName"
+              type="text"
+              name="name"
+              autocomplete="name"
+              required
+              placeholder="Your full name"
+            >
+          </div>
+
+          <div class="field">
+            <label for="registerEmail">Email address</label>
+            <input
+              id="registerEmail"
+              type="email"
+              name="email"
+              autocomplete="email"
+              required
+              placeholder="you@example.com"
+            >
+          </div>
+
+          <div class="field">
+            <label for="registerPassword">Password</label>
+            <input
+              id="registerPassword"
+              type="password"
+              name="password"
+              autocomplete="new-password"
+              minlength="8"
+              required
+              placeholder="At least 8 characters"
+            >
+          </div>
+
+          <div class="field">
+            <label for="confirmPassword">Confirm password</label>
+            <input
+              id="confirmPassword"
+              type="password"
+              name="confirmPassword"
+              autocomplete="new-password"
+              minlength="8"
+              required
+              placeholder="Enter your password again"
+            >
+          </div>
+
+          <p id="registerError" class="form-error" style="display:none"></p>
+
+          <button class="btn full" type="submit">CREATE ACCOUNT</button>
+
+          <p class="auth-switch">
+            Already have an account?
+            <button class="text-btn" type="button" data-page="login">
+              Log in
+            </button>
+          </p>
+        </form>
+      </div>
     `,
-    'login'
+    'home'
   );
+}
+
+/* -------------------- ADMIN DASHBOARD -------------------- */
+function adminDashboard() {
+  if (!isAdmin()) return shell('ADMIN ACCESS', '<div class="empty"><h2>Admin access only.</h2></div>');
+  const orders = getAllOrders();
+  return shell('ADMIN DASHBOARD', `
+    <div class="admin-wrap">
+      <div id="stockEditorHost"></div>
+      <div class="section-head"><p class="eyebrow">GENGA STORE MANAGEMENT</p><h1 class="section-title">ADMIN DASHBOARD</h1><p class="intro">Manage inventory and review customer orders.</p></div>
+      <div class="admin-stats">
+        <div class="admin-stat"><small>ON-HAND PRODUCTS</small><strong>${products.filter(p=>p.type==='onhand').length}</strong></div>
+        <div class="admin-stat"><small>PRE-ORDER PRODUCTS</small><strong>${products.filter(p=>p.type==='preorder').length}</strong></div>
+        <div class="admin-stat"><small>TOTAL ORDERS</small><strong>${orders.length}</strong></div>
+        <div class="admin-stat"><small>PENDING ORDERS</small><strong>${orders.filter(o=>['Pending approval','Processing'].includes(o.status)).length}</strong></div>
+      </div>
+      <section class="admin-panel">
+        <h2>INVENTORY MANAGEMENT</h2>
+        <form id="adminProductForm" class="admin-product-form">
+          <div class="field"><label>Product name</label><input name="name" required placeholder="Product name"></div>
+          <div class="field"><label>Price (₱)</label><input name="price" type="number" min="0" step="1" required value="0"></div>
+          <div class="field"><label>Image filename</label><input name="image" required placeholder="image-file.jpg"></div>
+          <div class="field"><label>Product type</label><select name="type"><option value="onhand">On-hand</option><option value="preorder">Pre-order</option></select></div>
+          <div class="field"><label>Stock quantity</label><input name="stock" type="number" min="0" value="0" required></div>
+          <div class="field"><label>Description</label><input name="desc" placeholder="Short description"></div>
+          <button class="btn full" type="submit">ADD PRODUCT</button>
+        </form>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>
+        ${products.map(p=>`<tr><td>${p.name}</td><td>${p.type==='onhand'?'On-hand':'Pre-order'}</td><td>${money(p.price)}</td><td>${Number(p.stock||0)}</td><td><button class="btn admin-small" data-stock-edit="${p.id}">Edit stock</button> <button class="btn light admin-small" data-product-delete="${p.id}">Delete</button></td></tr>`).join('')}
+        </tbody></table></div><p class="muted">Image filename must match a file in your assets folder. Stock is recorded for inventory display; checkout stock enforcement is not included yet.</p>
+      </section>
+      <section class="admin-panel"><h2>ORDER APPROVAL & STATUS</h2>
+      ${orders.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Update</th></tr></thead><tbody>
+      ${orders.map(o=>`<tr><td data-label="Order">${o.id}<br><small>${o.date}</small></td><td data-label="Customer">${o.customerName||'Customer'}<br><small>${o.customer||''}</small></td><td data-label="Items">${o.name}</td><td data-label="Total">${money(o.price)}</td><td data-label="Payment">${o.payment||'—'}</td><td data-label="Status">${o.status}</td><td data-label="Update"><label class="admin-status-label">Change status</label><select data-order-status="${o.id}">${['Pending approval','Confirmed','Processing','Shipped','Delivered','Cancelled'].map(st=>`<option value="${st}" ${o.status===st?'selected':''}>${st}</option>`).join('')}</select></td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="empty">No orders yet. New orders will appear here.</p>'}</section>
+    </div>`, 'home');
 }
 
 /* -------------------- LOGOUT -------------------- */
@@ -1314,7 +1373,9 @@ function logoutDemo() {
   state.orders = [];
   state.search = '';
   state.quantity = 1;
-  state.page = 'login';
+  state.pendingAddToCart = null;
+  state.pendingDestination = null;
+  state.page = 'home';
 
   closeDrawer();
   render();
@@ -1325,13 +1386,11 @@ function logoutDemo() {
 /* -------------------- RENDER PAGES -------------------- */
 
 function render() {
-  // Allow public browsing. Protect only account and purchase pages.
-  if (ACCOUNT_PAGES.includes(state.page) && !isLoggedIn()) {
-    state.pendingPage = state.page;
+  if (ADMIN_PAGES.includes(state.page) && !isAdmin()) state.page = 'login';
+  if (PROTECTED_PAGES.includes(state.page) && !isLoggedIn()) {
     state.page = 'login';
   }
 
-  // Logged-in users should not see login/register pages.
   if (['login', 'register'].includes(state.page) && isLoggedIn()) {
     state.page = 'home';
   }
@@ -1340,6 +1399,7 @@ function render() {
     home,
     onhand: () => collection('onhand'),
     preorder: () => collection('preorder'),
+    pasabuy,
     product: () => productDetail(state.selected),
     cart,
     checkout,
@@ -1349,27 +1409,41 @@ function render() {
     faq,
     about,
     login,
-    register
+    register,
+    admin: adminDashboard
   };
 
-  app.innerHTML = (pages[state.page] || login)();
+  app.innerHTML = (pages[state.page] || home)();
+  const nav = document.querySelector('#drawer nav');
+  if (nav && isAdmin() && !document.querySelector('#adminNavButton')) {
+    const b = document.createElement('button');
+    b.id = 'adminNavButton'; b.dataset.page = 'admin'; b.textContent = 'ADMIN DASHBOARD →';
+    nav.appendChild(b);
+  }
+  if (!isAdmin()) document.querySelector('#adminNavButton')?.remove();
 
-  // Visitors can browse public pages. Account/purchase pages stay hidden
-  // until login; login/register disappear once the user is authenticated.
   document.querySelectorAll('#drawer [data-page]').forEach(button => {
     const page = button.dataset.page;
     const loggedIn = isLoggedIn();
-    const protectedPage = ACCOUNT_PAGES.includes(page);
-    const authPage = ['login', 'register'].includes(page);
 
-    if (page === 'logout') {
-      button.hidden = !loggedIn;
-    } else if (protectedPage) {
-      button.hidden = !loggedIn;
-    } else if (authPage) {
-      button.hidden = loggedIn;
-    } else {
+    const alwaysVisible = [
+      'home', 'onhand', 'preorder', 'about', 'faq'
+    ];
+
+    const authPages = ['login', 'register'];
+
+    const protectedPages = [
+      'cart', 'favorites', 'history', 'profile', 'checkout'
+    ];
+
+    if (alwaysVisible.includes(page)) {
       button.hidden = false;
+    } else if (authPages.includes(page)) {
+      button.hidden = loggedIn;
+    } else if (page === 'logout') {
+      button.hidden = !loggedIn;
+    } else if (protectedPages.includes(page)) {
+      button.hidden = !loggedIn;
     }
   });
 
@@ -1379,17 +1453,21 @@ function render() {
 /* -------------------- MENU EVENTS -------------------- */
 
 if (drawer && scrim) {
-  document.querySelector('#menuToggle').addEventListener('click', () => {
-    drawer.classList.add('open');
-    scrim.classList.add('show');
-    drawer.setAttribute('aria-hidden', 'false');
+  const menuToggle = document.querySelector('#menuToggle');
+  const closeMenu = document.querySelector('#closeMenu');
 
-    document.querySelector('#menuToggle')
-      .setAttribute('aria-expanded', 'true');
-  });
+  if (menuToggle) {
+    menuToggle.addEventListener('click', () => {
+      drawer.classList.add('open');
+      scrim.classList.add('show');
+      drawer.setAttribute('aria-hidden', 'false');
+      menuToggle.setAttribute('aria-expanded', 'true');
+    });
+  }
 
-  document.querySelector('#closeMenu')
-    .addEventListener('click', closeDrawer);
+  if (closeMenu) {
+    closeMenu.addEventListener('click', closeDrawer);
+  }
 
   scrim.addEventListener('click', closeDrawer);
 }
@@ -1403,12 +1481,14 @@ document.addEventListener('click', event => {
 
   if (!target) return;
 
+  /* Navigate to a page */
   if (target.dataset.page) {
     event.preventDefault();
     go(target.dataset.page);
     return;
   }
 
+  /* Back button */
   if (target.hasAttribute('data-back')) {
     if (state.page === 'product') {
       go(state.previous);
@@ -1421,6 +1501,7 @@ document.addEventListener('click', event => {
     return;
   }
 
+  /* Open product details */
   if (target.dataset.product) {
     state.selected = Number(target.dataset.product);
     state.quantity = 1;
@@ -1429,13 +1510,14 @@ document.addEventListener('click', event => {
     return;
   }
 
+  /* Favorites require an account */
   if (target.dataset.fav) {
     if (!isLoggedIn()) {
-      state.pendingPage = 'favorites';
+      state.pendingDestination = 'favorites';
       state.page = 'login';
       closeDrawer();
       render();
-      notify('Please log in or create an account to save favorites.');
+      notify('Log in or register to save favorites.');
       return;
     }
 
@@ -1457,23 +1539,37 @@ document.addEventListener('click', event => {
     return;
   }
 
+  /* Add to cart */
   if (target.dataset.add) {
     if (target.hasAttribute('data-detail-add')) {
       const option = document.querySelector('#option');
-
       if (option) state.option = option.value;
     }
 
-    addToCart(target.dataset.add);
+    addToCart(target.dataset.add, state.quantity, 'cart');
     return;
   }
 
+  /* Order now */
   if (target.dataset.order) {
-    addToCart(target.dataset.order, state.quantity, 'checkout');
-    if (isLoggedIn()) go('checkout');
+    const id = Number(target.dataset.order);
+    const option = document.querySelector('#option');
+
+    if (option) state.option = option.value;
+
+    if (!isLoggedIn()) {
+      addToCart(id, state.quantity, 'checkout');
+      return;
+    }
+
+    if (addToCart(id, state.quantity, 'checkout')) {
+      go('checkout');
+    }
+
     return;
   }
 
+  /* Product quantity controls */
   if (target.dataset.qty) {
     state.quantity = Math.max(
       1,
@@ -1482,11 +1578,14 @@ document.addEventListener('click', event => {
 
     const display = document.querySelector('#qtyValue');
 
-    if (display) display.textContent = state.quantity;
+    if (display) {
+      display.textContent = state.quantity;
+    }
 
     return;
   }
 
+  /* Remove an item from cart */
   if (target.dataset.remove) {
     const [id, ...optionParts] = target.dataset.remove.split('-');
     const option = optionParts.join('-');
@@ -1500,6 +1599,7 @@ document.addEventListener('click', event => {
     return;
   }
 
+  /* Change cart item quantity */
   if (target.dataset.cartqty) {
     const [direction, id, ...optionParts] =
       target.dataset.cartqty.split('-');
@@ -1523,6 +1623,7 @@ document.addEventListener('click', event => {
     return;
   }
 
+  /* Expand or collapse FAQ answers */
   if (target.dataset.faq !== undefined) {
     state.faqOpen =
       state.faqOpen === Number(target.dataset.faq)
@@ -1532,6 +1633,71 @@ document.addEventListener('click', event => {
     render();
   }
 });
+
+
+/* -------------------- CUSTOM FILTER MENUS -------------------- */
+
+document.addEventListener('click', event => {
+  const sortDropdown = document.querySelector('#sortDropdown');
+  const priceDropdown = document.querySelector('#priceDropdown');
+
+  const dropdowns = [sortDropdown, priceDropdown].filter(Boolean);
+
+  const trigger = event.target.closest(
+    '#sortTrigger, #priceTrigger'
+  );
+
+  const option = event.target.closest('[data-sort], [data-price]');
+
+  if (trigger) {
+    const dropdown = trigger.closest('.custom-select');
+    const menu = dropdown.querySelector('.custom-select-menu');
+    const opening = menu.hidden;
+
+    // Close other dropdown menus first.
+    dropdowns.forEach(item => {
+      const otherMenu = item.querySelector('.custom-select-menu');
+      const otherTrigger = item.querySelector('.custom-select-trigger');
+
+      if (otherMenu) otherMenu.hidden = true;
+
+      if (otherTrigger) {
+        otherTrigger.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    menu.hidden = !opening;
+    trigger.setAttribute('aria-expanded', String(opening));
+    return;
+  }
+
+  if (option) {
+    if (option.hasAttribute('data-sort')) {
+      state.sort = option.dataset.sort;
+    } else if (option.hasAttribute('data-price')) {
+      state.price = option.dataset.price;
+    }
+
+    render();
+    return;
+  }
+
+  // Close menus when tapping outside.
+  dropdowns.forEach(dropdown => {
+    if (!dropdown.contains(event.target)) {
+      const menu = dropdown.querySelector('.custom-select-menu');
+      const button = dropdown.querySelector('.custom-select-trigger');
+
+      if (menu) menu.hidden = true;
+
+      if (button) {
+        button.setAttribute('aria-expanded', 'false');
+      }
+    }
+  });
+});
+
+
 
 /* -------------------- FILTERS -------------------- */
 
@@ -1569,7 +1735,6 @@ document.addEventListener('input', event => {
     searchInput.setSelectionRange(position, position);
   }
 });
-
 /* -------------------- REGISTRATION -------------------- */
 
 document.addEventListener('submit', event => {
@@ -1592,6 +1757,16 @@ document.addEventListener('submit', event => {
   );
 
   const error = document.querySelector('#registerError');
+
+  if (!error) return;
+
+  error.style.display = 'none';
+
+  if (!name || !email) {
+    error.textContent = 'Please enter your name and email.';
+    error.style.display = 'block';
+    return;
+  }
 
   if (password.length < 8) {
     error.textContent = 'Password must be at least 8 characters.';
@@ -1617,7 +1792,8 @@ document.addEventListener('submit', event => {
   users.push({
     name,
     email,
-    password
+    password,
+    role: 'customer'
   });
 
   localStorage.setItem(
@@ -1625,10 +1801,10 @@ document.addEventListener('submit', event => {
     JSON.stringify(users)
   );
 
-  notify('Account created! Please log in.');
-
   state.page = 'login';
   render();
+
+  notify('Account created! Please log in.');
 });
 
 /* -------------------- LOGIN -------------------- */
@@ -1656,8 +1832,10 @@ document.addEventListener('submit', event => {
   );
 
   if (!user) {
-    error.textContent = 'Incorrect email or password.';
-    error.style.display = 'block';
+    if (error) {
+      error.textContent = 'Incorrect email or password.';
+      error.style.display = 'block';
+    }
     return;
   }
 
@@ -1665,27 +1843,40 @@ document.addEventListener('submit', event => {
     'gengaDemoSession',
     JSON.stringify({
       name: user.name,
-      email: user.email
+      email: user.email,
+      role: user.role || 'customer'
     })
   );
 
   loadUserData();
 
   state.search = '';
-  const pendingAction = state.pendingAction;
-  const nextPage = state.pendingPage || 'home';
-  state.pendingAction = null;
-  state.pendingPage = null;
 
-  if (pendingAction) {
-    state.option = pendingAction.option || state.option;
-    addToCart(pendingAction.id, pendingAction.qty);
-    state.page = pendingAction.afterLogin || 'cart';
+  const pending = state.pendingAddToCart;
+  const pendingDestination = state.pendingDestination;
+
+  state.pendingAddToCart = null;
+  state.pendingDestination = null;
+
+  if (pending) {
+    state.option = pending.option || state.option;
+    state.quantity = pending.qty || 1;
+
+    state.page = 'home';
+    render();
+
+    addToCart(
+      pending.id,
+      pending.qty,
+      pending.nextPage || 'cart'
+    );
+
+    go(pending.nextPage || 'cart');
   } else {
-    state.page = nextPage;
+    state.page = user.role === 'admin' ? 'admin' : (pendingDestination || 'home');
+    render();
   }
 
-  render();
   notify('Welcome to GENGA, ' + user.name + '!');
 });
 
@@ -1731,13 +1922,18 @@ document.addEventListener('submit', event => {
     ).join(', '),
 
     price: total,
-    status: 'Processing',
+    status: 'Pending approval',
     customer: session.email,
     customerName: data.get('name'),
     phone: data.get('phone'),
     address: data.get('address'),
     payment: data.get('payment')
   });
+
+  const createdOrder = state.orders[0];
+  const allOrders = getAllOrders();
+  allOrders.unshift(createdOrder);
+  saveAllOrders(allOrders);
 
   state.cart = [];
 
@@ -1746,7 +1942,140 @@ document.addEventListener('submit', event => {
   state.page = 'history';
   render();
 
-  notify('Demo order placed successfully!');
+  notify('Order placed successfully!');
+});
+
+
+/* -------------------- ADMIN ACTIONS -------------------- */
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'adminProductForm') return;
+  event.preventDefault();
+  if (!isAdmin()) return notify('Admin access only.');
+  const d = new FormData(event.target);
+  const name = String(d.get('name')||'').trim();
+  const image = String(d.get('image')||'').trim();
+  const price = Number(d.get('price'));
+  if (!name || !image || !Number.isFinite(price) || price < 0) return notify('Enter valid product details.');
+  const type = d.get('type') === 'preorder' ? 'preorder' : 'onhand';
+  products.push({id:Math.max(0,...products.map(p=>Number(p.id)||0))+1,name,image,price,type,stock:Math.max(0,Number(d.get('stock'))||0),badge:type==='preorder'?'Pre-Order':'On Hand',desc:String(d.get('desc')||'').trim()||name});
+  saveProducts(); render(); notify('Product added to inventory.');
+});
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'stockEditForm') return;
+  event.preventDefault();
+  if (!isAdmin()) return notify('Admin access only.');
+  const form = event.target;
+  const product = find(form.dataset.stockProduct);
+  const value = Number(new FormData(form).get('stock'));
+  if (!product || !Number.isInteger(value) || value < 0) return notify('Enter a valid non-negative whole number.');
+  product.stock = value;
+  saveProducts();
+  render();
+  notify('Stock quantity updated.');
+});
+
+document.addEventListener('click', event => {
+  if (event.target.closest('[data-stock-modal-close], [data-admin-modal-close]')) {
+    const host = document.querySelector('#stockEditorHost');
+    if (host) host.innerHTML = '';
+  }
+});
+
+document.addEventListener('change', event => {
+  const sel = event.target.closest('[data-order-status]');
+  if (!sel) return;
+  if (!isAdmin()) return notify('Admin access only.');
+
+  const orderId = String(sel.dataset.orderStatus);
+  const orders = getAllOrders();
+  const order = orders.find(item => String(item.id) === orderId);
+  if (!order) {
+    notify('Order could not be found. Refresh and try again.');
+    return;
+  }
+
+  order.status = sel.value;
+  saveAllOrders(orders);
+
+  // Update every matching customer history stored on this same browser origin.
+  getUsers().forEach(user => {
+    const storageKey = 'gengaOrders_' + user.email;
+    const customerOrders = readStorage(storageKey, []);
+    let changed = false;
+    customerOrders.forEach(customerOrder => {
+      if (String(customerOrder.id) === orderId) {
+        customerOrder.status = order.status;
+        changed = true;
+      }
+    });
+    if (changed) localStorage.setItem(storageKey, JSON.stringify(customerOrders));
+  });
+
+  render();
+  notify('Order status updated to ' + order.status + '.');
+});
+document.addEventListener('click', event => {
+  const stockBtn = event.target.closest('[data-stock-edit]');
+  if (stockBtn) {
+    if (!isAdmin()) return notify('Admin access only.');
+    const p = find(stockBtn.dataset.stockEdit); if (!p) return;
+    const host = document.querySelector('#stockEditorHost');
+    if (!host) return;
+    host.innerHTML = `
+      <div class="admin-modal-backdrop" data-stock-modal-close>
+        <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="stockModalTitle">
+          <button type="button" class="admin-modal-close" data-stock-modal-close aria-label="Close">×</button>
+          <p class="eyebrow">INVENTORY UPDATE</p>
+          <h2 id="stockModalTitle">Edit stock quantity</h2>
+          <p class="admin-modal-product">${p.name}</p>
+          <form id="stockEditForm" data-stock-product="${p.id}">
+            <label for="stockQuantityInput">Available stock</label>
+            <input id="stockQuantityInput" name="stock" type="number" min="0" step="1" value="${Number(p.stock||0)}" required>
+            <div class="admin-modal-actions">
+              <button type="button" class="btn light" data-stock-modal-close>Cancel</button>
+              <button type="submit" class="btn">SAVE STOCK</button>
+            </div>
+          </form>
+        </section>
+      </div>`;
+    const input = host.querySelector('#stockQuantityInput');
+    if (input) { input.focus(); input.select(); }
+    return;
+  }
+  const deleteConfirm = event.target.closest('[data-delete-confirm]');
+  if (deleteConfirm) {
+    if (!isAdmin()) return notify('Admin access only.');
+    const productId = Number(deleteConfirm.dataset.deleteConfirm);
+    const product = find(productId);
+    if (!product) return;
+    const index = products.findIndex(item => item.id === product.id);
+    if (index >= 0) products.splice(index, 1);
+    saveProducts();
+    render();
+    notify('Product deleted.');
+    return;
+  }
+
+  const deleteBtn = event.target.closest('[data-product-delete]');
+  if (deleteBtn) {
+    if (!isAdmin()) return notify('Admin access only.');
+    const product = find(deleteBtn.dataset.productDelete);
+    const host = document.querySelector('#stockEditorHost');
+    if (!product || !host) return;
+    host.innerHTML = `
+      <div class="admin-modal-backdrop" data-admin-modal-close>
+        <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+          <button type="button" class="admin-modal-close" data-admin-modal-close aria-label="Close">×</button>
+          <p class="eyebrow">INVENTORY MANAGEMENT</p>
+          <h2 id="deleteModalTitle">Delete this product?</h2>
+          <p class="admin-modal-product">Are you sure you want to delete <strong>${product.name}</strong>? This action cannot be undone.</p>
+          <div class="admin-modal-actions">
+            <button type="button" class="btn light" data-admin-modal-close>Cancel</button>
+            <button type="button" class="btn admin-danger" data-delete-confirm="${product.id}">DELETE PRODUCT</button>
+          </div>
+        </section>
+      </div>`;
+  }
 });
 
 /* -------------------- INITIALIZATION -------------------- */
@@ -1755,10 +2084,7 @@ state.faqOpen = 0;
 
 if (isLoggedIn()) {
   loadUserData();
-  state.page = 'home';
-} else {
-  // Guests can browse the store without signing in.
-  state.page = 'home';
 }
 
+state.page = 'home';
 render();
