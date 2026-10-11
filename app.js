@@ -602,10 +602,7 @@ function home() {
         </div>
 
         <div class="hero-art">
-          <img
-            src="${asset('sanji-portrait.jpg')}"
-            alt="Featured anime collectible"
-          >
+          <img src="Logo.png" alt="GENGA Logo">
         </div>
 
       </div>
