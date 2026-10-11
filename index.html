@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#197c80">
+  <meta name="description" content="Discover anime figures, plushies, and collectibles at GENGA.">
+  <title>GENGA — The Art Behind Every Collection</title>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <!-- TOP NAVIGATION -->
+  <header class="topbar">
+
+    <button
+      class="icon-btn menu-toggle"
+      id="menuToggle"
+      aria-label="Open navigation menu"
+      aria-controls="drawer"
+      aria-expanded="false"
+    >
+      ☰
+    </button>
+
+    <a class="brand-mini" href="#home" data-page="home" data-auth-only>
+  <img src="assets/Logo.png" alt="GENGA Logo">
+</a>
+
+    <button
+      class="icon-btn profile-shortcut"
+      data-page="profile"
+      aria-label="My account"
+    >
+      ♙
+    </button>
+
+  </header>
+
+  <!-- SIDE MENU -->
+  <aside
+    class="drawer"
+    id="drawer"
+    aria-label="Main navigation"
+    aria-hidden="true"
+  >
+
+    <div class="drawer-head">
+
+      <a href="#home" class="logo" data-page="home" data-auth-only>
+  <img src="assets/Logo.png" alt="GENGA Logo">
+</a>
+
+      <button
+        class="icon-btn"
+        id="closeMenu"
+        aria-label="Close navigation menu"
+      >
+        ×
+      </button>
+
+    </div>
+
+    <p class="tagline">
+      THE ART BEHIND EVERY COLLECTION
+    </p>
+
+    <!-- STORE PAGES -->
+    <nav aria-label="Store navigation">
+
+      <button data-page="home" data-auth-only>
+        HOME →
+      </button>
+
+      <button data-page="about" data-auth-only>
+        ABOUT US →
+      </button>
+
+      <button data-page="faq" data-auth-only>
+        FAQ →
+      </button>
+
+      <button data-page="onhand" data-auth-only>
+        ON-HAND ITEMS →
+      </button>
+
+      <button data-page="preorder" data-auth-only>
+        PRE-ORDER →
+      </button>
+
+      <button data-page="favorites" data-auth-only>
+        FAVORITES ♡
+      </button>
+
+      <button data-page="cart" data-auth-only>
+        YOUR CART →
+      </button>
+
+      <button data-page="history" data-auth-only>
+        TRANSACTION HISTORY →
+      </button>
+
+      <!-- CUSTOMER ACCOUNT -->
+      <button data-page="profile" data-auth-only>
+        MY PROFILE →
+      </button>
+
+      <button data-page="login" data-guest-only>
+        LOGIN →
+      </button>
+
+      <button data-page="register" data-guest-only>
+        CREATE ACCOUNT →
+      </button>
+
+      <button data-page="logout" data-auth-only>
+        LOG OUT →
+      </button>
+
+    </nav>
+
+  </aside>
+
+  <!-- MENU BACKDROP -->
+  <div
+    class="scrim"
+    id="scrim"
+    aria-hidden="true"
+  ></div>
+
+  <!-- MAIN CONTENT -->
+  <main id="app">
+    <noscript>
+      <p>
+        Please enable JavaScript to use the GENGA store.
+      </p>
+    </noscript>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+
+    <span>GENGA</span>
+
+    <p>THE ART BEHIND EVERY COLLECTION</p>
+
+    <div>
+
+      <button data-page="home" data-auth-only>
+        Home
+      </button>
+
+      <button data-page="onhand" data-auth-only>
+        Browse
+      </button>
+
+      <button data-page="preorder" data-auth-only>
+        Pre-order
+      </button>
+
+      <button data-page="about" data-auth-only>
+        About
+      </button>
+
+      <button data-page="faq" data-auth-only>
+        FAQ
+      </button>
+
+      <button data-page="login" data-guest-only>
+        Login
+      </button>
+
+      <button data-page="register" data-guest-only>
+        Register
+      </button>
+
+      <button data-page="profile" data-auth-only>
+        My Account
+      </button>
+
+    </div>
+
+    <small>
+      © 2026 Genga Collectibles. All rights reserved.
+    </small>
+
+  </footer>
+
+  <!-- NOTIFICATION MESSAGE -->
+  <div
+    class="toast"
+    id="toast"
+    role="status"
+    aria-live="polite"
+  ></div>
+
+  <!-- JAVASCRIPT -->
+  <script src="app.js"></script>
+
+</body>
+</html>
