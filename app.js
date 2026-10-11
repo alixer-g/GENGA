@@ -339,7 +339,7 @@ const money = amount =>
   '₱' + Number(amount).toLocaleString('en-PH');
 
 const asset = filename =>
-  'assets/' + filename;
+  '/' + filename;
 
 const find = id =>
   products.find(product => product.id === Number(id));
@@ -1253,7 +1253,7 @@ function register() {
         <div class="section-head">       
 <img
   class="hero-logo"
-  src="assets/Logo.png"
+  src="/Logo.png"
   alt="GENGA — The Art Behind Every Collection"
 >
         </div>
@@ -1353,7 +1353,7 @@ function adminDashboard() {
         </form>
         <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>
         ${products.map(p=>`<tr><td>${p.name}</td><td>${p.type==='onhand'?'On-hand':'Pre-order'}</td><td>${money(p.price)}</td><td>${Number(p.stock||0)}</td><td><button class="btn admin-small" data-stock-edit="${p.id}">Edit stock</button> <button class="btn light admin-small" data-product-delete="${p.id}">Delete</button></td></tr>`).join('')}
-        </tbody></table></div><p class="muted">Image filename must match a file in your assets folder. Stock is recorded for inventory display; checkout stock enforcement is not included yet.</p>
+        </tbody></table></div><p class="muted">Image filename must match a file in your  folder. Stock is recorded for inventory display; checkout stock enforcement is not included yet.</p>
       </section>
       <section class="admin-panel"><h2>ORDER APPROVAL & STATUS</h2>
       ${orders.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Update</th></tr></thead><tbody>
