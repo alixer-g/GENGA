@@ -1,99 +1,182 @@
+
+/* =====================================================
+   GENGA COLLECTIBLES STORE
+   Complete front-end application
+   Browse-first demo version
+   ===================================================== */
+
+/* -------------------- PRODUCTS -------------------- */
+
 const products = [
   {
     id: 1,
-    name: 'One Piece Luffy Straw Hat Plush',
-    price: 350,
-    image: 'luffy-plush.jpg',
-    badge: 'Ready to ship',
+    name: 'Banana Fish Acrylic Keychain Collection',
+    price: 0,
+    image: 'Banana-Fish-Acrylic-Keychain.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'A soft Luffy plush wearing his iconic straw hat.'
+    desc: 'Banana Fish acrylic keychain collection.'
   },
   {
     id: 2,
-    name: 'Jujutsu Kaisen Mini Plush',
-    price: 420,
-    image: 'jjk-plush.jpg',
-    badge: 'Limited stock',
+    name: 'Banana Fish Acrylic Stand',
+    price: 0,
+    image: 'Banana-Fish-Acrylic-Stand.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'A mini plush collection inspired by Jujutsu Kaisen.'
+    desc: 'Banana Fish acrylic stand.'
   },
   {
     id: 3,
-    name: 'Anime Mascot Plush Collection',
-    price: 450,
-    image: 'anime-mascots.jpg',
-    badge: 'On hand',
+    name: 'Banana Fish Ash Lynx Figure',
+    price: 0,
+    image: 'Banana-Fish-Ash-Lynx-Figure.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'A colorful assortment of anime mascot plushies.'
+    desc: 'Ash Lynx collectible figure.'
   },
   {
     id: 4,
-    name: 'Haikyuu Team Mini Plush Set',
-    price: 450,
-    image: 'haikyuu-plush.jpg',
-    badge: 'New on hand',
+    name: 'Banana Fish Ash Lynx Sunflower Figure',
+    price: 0,
+    image: 'Banana-Fish-Ash-Lynx-Sunflower-Figure.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'Bring your favorite volleyball team home.'
+    desc: 'Ash Lynx sunflower-themed collectible figure.'
   },
   {
     id: 5,
-    name: 'Anime Character Plush Keychain',
-    price: 180,
-    image: 'keychains.jpg',
-    badge: 'Ready to ship',
+    name: 'Banana Fish Sleepyhead Acrylic Keychain',
+    price: 0,
+    image: 'Banana-Fish-Sleepyhead-Acrylic-Keychain.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'Small character plush keychains for collectors.'
+    desc: 'Banana Fish Sleepyhead acrylic keychain.'
   },
   {
     id: 6,
-    name: 'One Piece Plush Pair',
-    price: 850,
-    image: 'one-piece-pair.jpg',
-    badge: 'Limited pair',
+    name: 'One Piece Ace Action Figure',
+    price: 0,
+    image: 'One-Piece-Ace-Action-Figure.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'A cute pair of One Piece plushies.'
+    desc: 'Portgas D. Ace action figure.'
   },
   {
     id: 7,
-    name: 'Banana Fish Ash & Eiji Mini Plush',
-    price: 550,
-    image: 'ash-eiji.jpg',
-    badge: 'New on hand',
+    name: 'One Piece Ace Figure',
+    price: 0,
+    image: 'One-Piece-Ace-Figure.jpg',
+    badge: 'On Hand',
     type: 'onhand',
-    desc: 'Ash and Eiji matching mini plush pair.',
-    options: ['Ash', 'Eiji', 'Pair']
+    desc: 'Portgas D. Ace collectible figure.'
   },
   {
     id: 8,
-    name: 'Sanji Portrait of Pirates Figure',
-    price: 1850,
-    image: 'sanji-portrait.jpg',
-    badge: 'ETA: 8–12 weeks',
-    type: 'preorder',
-    desc: 'A detailed Sanji collectible figure.'
+    name: 'One Piece Ace Flame Emperor Figure',
+    price: 0,
+    image: 'One-Piece-Ace-Flame-Emperor-Figure.jpg',
+    badge: 'On Hand',
+    type: 'onhand',
+    desc: 'Portgas D. Ace Flame Emperor figure.'
   },
   {
     id: 9,
-    name: 'Sanji Hell Memories Statue',
-    price: 3450,
-    image: 'sanji-hell.jpg',
-    badge: 'Pre-order',
-    type: 'preorder',
-    desc: 'A dramatic Sanji statue for your display shelf.'
+    name: 'One Piece ASL Brothers Diorama Figure',
+    price: 0,
+    image: 'One-Piece-ASL-Brothers-Diorama-Figure.jpg',
+    badge: 'On Hand',
+    type: 'onhand',
+    desc: 'One Piece ASL brothers diorama figure.'
   },
   {
     id: 10,
-    name: 'Portgas D. Ace Flame Statue',
-    price: 3200,
-    image: 'ace-statue.jpg',
-    badge: 'Pre-order',
+    name: 'One Piece Sanji Fire Battle Figure',
+    price: 0,
+    image: 'One-Piece-Sanji-Fire-Battle-Figure.jpg',
+    badge: 'On Hand',
+    type: 'onhand',
+    desc: 'Sanji Fire Battle collectible figure.'
+  },
+  {
+    id: 11,
+    name: 'One Piece Sanji Sitting Premium Figure',
+    price: 0,
+    image: 'One-Piece-Sanji-Sitting-Premium-Figure.jpg',
+    badge: 'On Hand',
+    type: 'onhand',
+    desc: 'Sanji Sitting Premium collectible figure.'
+  },
+  {
+    id: 12,
+    name: 'Banana Fish Ash and Eiji Plush',
+    price: 0,
+    image: 'Banana-Fish-Ash-and-Eiji-Plush.jpg',
+    badge: 'Pre-Order',
     type: 'preorder',
-    desc: 'A flame-effect Ace statue for One Piece fans.'
+    desc: 'Ash and Eiji character plush.'
+  },
+  {
+    id: 13,
+    name: 'Haikyuu Mini Plush Collection',
+    price: 0,
+    image: 'Haikyuu-Mini-Plush-Collection.jpg',
+    badge: 'Pre-Order',
+    type: 'preorder',
+    desc: 'Mini plush collection inspired by Haikyuu.'
+  },
+  {
+    id: 14,
+    name: 'Jujutsu Kaisen Anime Bear Plush Collection',
+    price: 0,
+    image: 'Jujutsu-Kaisen-Anime-Bear-Plush-Collection.jpg',
+    badge: 'Pre-Order',
+    type: 'preorder',
+    desc: 'Jujutsu Kaisen anime bear plush collection.'
+  },
+  {
+    id: 15,
+    name: 'Jujutsu Kaisen Mini Plush Collection',
+    price: 0,
+    image: 'Jujutsu-Kaisen-Mini-Plush-Collection.jpg',
+    badge: 'Pre-Order',
+    type: 'preorder',
+    desc: 'Jujutsu Kaisen mini plush collection.'
+  },
+  {
+    id: 16,
+    name: 'One Piece Luffy 30cm Plush',
+    price: 0,
+    image: 'One-Piece-Luffy-30cm-Plush.jpg',
+    badge: 'Pre-Order',
+    type: 'preorder',
+    desc: '30cm Luffy plush.'
+  },
+  {
+    id: 17,
+    name: 'One Piece Luffy Gear 5 and Normal Plush',
+    price: 0,
+    image: 'One-Piece-Luffy-Gear5-and-Normal-Plush.jpg',
+    badge: 'Pre-Order',
+    type: 'preorder',
+    desc: 'Luffy Gear 5 and normal plush collection.'
+  },
+  {
+    id: 18,
+    name: 'Twisted Wonderland Plushies',
+    price: 0,
+    image: 'Twisted-Wonderland-Plushies.jpg',
+    badge: 'Pre-Order',
+    type: 'preorder',
+    desc: 'Twisted Wonderland character plushies.'
   }
+
 ];
 
+/* -------------------- APP STATE -------------------- */
+
 const state = {
-  page: 'home',
+  page: 'login',
   previous: 'onhand',
   selected: 1,
   quantity: 1,
@@ -102,66 +185,123 @@ const state = {
   sort: 'popularity',
   price: 'all',
   cart: [],
-  favorites: [1],
-  orders: [
-    {
-      id: 'GENGA-260014',
-      date: 'October 7, 2026',
-      name: 'One Piece Luffy Plush',
-      price: 350,
-      status: 'Delivered'
-    },
-    {
-      id: 'GENGA-260009',
-      date: 'September 18, 2026',
-      name: 'Anime Mascot Plush Collection',
-      price: 900,
-      status: 'Shipped'
-    },
-    {
-      id: 'GENGA-632461',
-      date: 'Today',
-      name: 'Sanji Hell Memories Statue, Sanji Portrait of Pirates Figure',
-      price: 5300,
-      status: 'Processing'
-    }
-  ]
+  favorites: [],
+  faqOpen: 0,
+  orders: [],
+  pendingPage: null,
+  pendingAction: null
 };
-
-// DEMO AUTHENTICATION HELPERS
-// For production, replace this with a secure backend authentication provider.
-function getCurrentUser() {
-  try {
-    const user = JSON.parse(localStorage.getItem('gengaDemoSession') || 'null');
-    return user && user.email ? user : null;
-  } catch {
-    return null;
-  }
-}
-
-function isLoggedIn() {
-  return Boolean(getCurrentUser());
-}
-
-const publicPages = new Set(['login', 'register']);
-
-if (!isLoggedIn()) state.page = 'login';
 
 const app = document.querySelector('#app');
 const drawer = document.querySelector('#drawer');
 const scrim = document.querySelector('#scrim');
 const toastEl = document.querySelector('#toast');
 
-const money = n =>
-  '₱' + Number(n).toLocaleString('en-PH');
+const PUBLIC_PAGES = [
+  'home',
+  'onhand',
+  'preorder',
+  'product',
+  'about',
+  'faq',
+  'login',
+  'register'
+];
 
-// Images are expected beside index.html, app.js, and styles.css.
+const ACCOUNT_PAGES = [
+  'cart',
+  'checkout',
+  'favorites',
+  'profile',
+  'history'
+];
+
+/* -------------------- STORAGE HELPERS -------------------- */
+
+function readStorage(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function getUsers() {
+  return readStorage('gengaDemoUsers', []);
+}
+
+function getCurrentUser() {
+  return readStorage('gengaDemoSession', null);
+}
+
+function isLoggedIn() {
+  const session = getCurrentUser();
+
+  if (!session || !session.email) {
+    return false;
+  }
+
+  return getUsers().some(user =>
+    user.email === session.email
+  );
+}
+
+function saveUserData() {
+  const session = getCurrentUser();
+
+  if (!session) return;
+
+  localStorage.setItem(
+    'gengaCart_' + session.email,
+    JSON.stringify(state.cart)
+  );
+
+  localStorage.setItem(
+    'gengaFavorites_' + session.email,
+    JSON.stringify(state.favorites)
+  );
+
+  localStorage.setItem(
+    'gengaOrders_' + session.email,
+    JSON.stringify(state.orders)
+  );
+}
+
+function loadUserData() {
+  const session = getCurrentUser();
+
+  if (!session) return;
+
+  state.cart = readStorage(
+    'gengaCart_' + session.email,
+    []
+  );
+
+  state.favorites = readStorage(
+    'gengaFavorites_' + session.email,
+    []
+  );
+
+  state.orders = readStorage(
+    'gengaOrders_' + session.email,
+    []
+  );
+}
+
+/* -------------------- GENERAL HELPERS -------------------- */
+
+const money = amount =>
+  '₱' + Number(amount).toLocaleString('en-PH');
+
 const asset = filename => filename;
 
 const find = id =>
-  products.find(p => p.id === Number(id));
+  products.find(product => product.id === Number(id));
 
 function notify(message) {
+  if (!toastEl) return;
+
   toastEl.textContent = message;
   toastEl.classList.add('show');
 
@@ -169,15 +309,64 @@ function notify(message) {
 
   notify.timer = setTimeout(() => {
     toastEl.classList.remove('show');
-  }, 2200);
+  }, 2500);
+}
+
+function closeDrawer() {
+  if (!drawer || !scrim) return;
+
+  drawer.classList.remove('open');
+  scrim.classList.remove('show');
+  drawer.setAttribute('aria-hidden', 'true');
+
+  const menuButton = document.querySelector('#menuToggle');
+
+  if (menuButton) {
+    menuButton.setAttribute('aria-expanded', 'false');
+  }
+}
+
+/* -------------------- NAVIGATION -------------------- */
+
+function go(page) {
+  if (page === 'logout') {
+    logoutDemo();
+    return;
+  }
+
+  // Browsing pages are public. Account pages require authentication.
+  if (ACCOUNT_PAGES.includes(page) && !isLoggedIn()) {
+    state.pendingPage = page;
+    state.page = 'login';
+    closeDrawer();
+    render();
+    notify('Please log in or create an account to continue.');
+    return;
+  }
+
+  // Logged-in users do not need to revisit the auth pages.
+  if (['login', 'register'].includes(page) && isLoggedIn()) {
+    page = 'home';
+  }
+
+  if (page === 'product') {
+    state.previous = state.page;
+  }
+
+  state.page = page;
+
+  closeDrawer();
+  render();
 }
 
 function header(title, right = 'home') {
   return `
     <div class="page-header">
-      <button class="icon-btn" data-back aria-label="Back">
-        ‹
-      </button>
+      <button
+        class="icon-btn"
+        data-back
+        aria-label="Go back"
+      >‹</button>
 
       <h2>${title}</h2>
 
@@ -185,9 +374,7 @@ function header(title, right = 'home') {
         class="icon-btn"
         data-page="${right}"
         aria-label="${right === 'cart' ? 'Cart' : 'Home'}"
-      >
-        ${right === 'cart' ? '🛒' : '⌂'}
-      </button>
+      >${right === 'cart' ? '🛒' : '⌂'}</button>
     </div>
   `;
 }
@@ -206,9 +393,10 @@ function shell(title, content, right = 'home') {
   `;
 }
 
+/* -------------------- PRODUCT CARDS -------------------- */
+
 function card(product) {
-  const isFavorite =
-    state.favorites.includes(product.id);
+  const favorite = state.favorites.includes(product.id);
 
   return `
     <article class="product-card">
@@ -218,50 +406,42 @@ function card(product) {
         data-product="${product.id}"
         src="${asset(product.image)}"
         alt="${product.name}"
+        loading="lazy"
       >
 
       <button
-        class="heart ${isFavorite ? 'active' : ''}"
+        class="heart ${favorite ? 'active' : ''}"
         data-fav="${product.id}"
         aria-label="Toggle favorite"
-      >
-        ${isFavorite ? '♥' : '♡'}
-      </button>
+      >${favorite ? '♥' : '♡'}</button>
 
       <div class="product-body">
 
-        <span class="pill">
-          ${product.badge}
-        </span>
+        <span class="pill">${product.badge}</span>
 
-        <h3 class="product-name">
-          ${product.name}
-        </h3>
+        <h3 class="product-name">${product.name}</h3>
 
-        <div class="price">
-          ${money(product.price)}
-        </div>
+        <div class="price">${money(product.price)}</div>
 
         <div class="product-actions">
+
           <button
             class="btn"
             data-product="${product.id}"
-          >
-            View item
-          </button>
+          >View item</button>
 
           <button
             class="btn light"
             data-add="${product.id}"
-          >
-            Add to cart
-          </button>
-        </div>
+          >Add to cart</button>
 
+        </div>
       </div>
     </article>
   `;
 }
+
+/* -------------------- PRODUCT COLLECTIONS -------------------- */
 
 function collection(type) {
   let list = products.filter(product =>
@@ -272,17 +452,17 @@ function collection(type) {
   );
 
   if (state.price === 'low') {
-    list = list.filter(p => p.price < 500);
+    list = list.filter(product => product.price < 500);
   }
 
   if (state.price === 'mid') {
-    list = list.filter(
-      p => p.price >= 500 && p.price < 2000
+    list = list.filter(product =>
+      product.price >= 500 && product.price < 2000
     );
   }
 
   if (state.price === 'high') {
-    list = list.filter(p => p.price >= 2000);
+    list = list.filter(product => product.price >= 2000);
   }
 
   if (state.sort === 'price-up') {
@@ -294,33 +474,31 @@ function collection(type) {
   }
 
   if (state.sort === 'name') {
-    list.sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
+    list.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  const isOnHand = type === 'onhand';
+  const onHand = type === 'onhand';
 
   return shell(
-    isOnHand ? 'ON-HAND ITEMS' : 'PRE-ORDER',
+    onHand ? 'ON-HAND ITEMS' : 'PRE-ORDER',
     `
       <div class="section-head">
         <p class="eyebrow">
-          ${isOnHand
+          ${onHand
             ? 'READY STOCK · SHIPS SOON'
             : 'RESERVE YOUR NEXT GRAIL'}
         </p>
 
         <h1 class="section-title">
-          ${isOnHand
+          ${onHand
             ? 'FIND IT. LOVE IT. GET IT.'
             : 'COMING TO YOUR SHELF'}
         </h1>
 
         <p class="intro">
-          ${isOnHand
-            ? 'These collectibles are already with us and ready for their new home.'
-            : 'Secure incoming collectibles before they sell out. ETA is shown on every item.'}
+          ${onHand
+            ? 'These collectibles are ready for their new home.'
+            : 'Reserve incoming collectibles before they sell out.'}
         </p>
       </div>
 
@@ -332,7 +510,7 @@ function collection(type) {
             id="search"
             value="${state.search}"
             placeholder="⌕ Search the collection"
-            aria-label="Search the collection"
+            aria-label="Search products"
           >
         </div>
 
@@ -382,10 +560,9 @@ function collection(type) {
         </div>
 
         <div class="product-grid">
-          ${
-            list.map(card).join('') ||
-            '<div class="empty" style="grid-column:1/-1">No collectibles found. Try another search.</div>'
-          }
+          ${list.length
+            ? list.map(card).join('')
+            : '<p class="empty">No products found. Try another search.</p>'}
         </div>
 
       </div>
@@ -393,6 +570,8 @@ function collection(type) {
     'cart'
   );
 }
+
+/* -------------------- HOMEPAGE -------------------- */
 
 function home() {
   return `
@@ -435,13 +614,8 @@ function home() {
         <div class="content">
 
           <div class="section-head">
-            <p class="eyebrow">
-              FRESH FINDS FOR YOUR SHELF
-            </p>
-
-            <h2 class="section-title">
-              PRE-ORDER NOW!
-            </h2>
+            <p class="eyebrow">FRESH FINDS FOR YOUR SHELF</p>
+            <h2 class="section-title">PRE-ORDER NOW!</h2>
           </div>
 
           <div class="product-grid">
@@ -467,16 +641,14 @@ function home() {
             <div class="feature-card">
               <h3>COLLECT WITH CONFIDENCE</h3>
               <p>
-                Clear product details, order history,
-                and delivery updates in one place.
+                Find collectibles and review your order history.
               </p>
             </div>
 
             <div class="feature-card">
               <h3>NEED A HAND?</h3>
               <p>
-                Visit our FAQ for payment, delivery,
-                order tracking, and packaging information.
+                Learn about payment, delivery, and packaging.
               </p>
 
               <button class="btn" data-page="faq">
@@ -491,6 +663,8 @@ function home() {
     </section>
   `;
 }
+
+/* -------------------- PRODUCT DETAILS -------------------- */
 
 function productDetail(id) {
   const product = find(id) || products[0];
@@ -510,49 +684,33 @@ function productDetail(id) {
 
         <div class="detail-info">
 
-          <span class="pill">
-            ${product.badge}
-          </span>
+          <span class="pill">${product.badge}</span>
 
           <h1>${product.name}</h1>
 
-          <div class="price">
-            ${money(product.price)}
-          </div>
+          <div class="price">${money(product.price)}</div>
 
-          <p class="intro">
-            ${product.desc}
-          </p>
+          <p class="intro">${product.desc}</p>
 
-          ${
-            product.options
-              ? `
-                <div class="field" style="margin:24px 0">
-                  <label for="option">Choose option</label>
+          ${product.options ? `
+            <div class="field" style="margin:24px 0">
+              <label for="option">Choose option</label>
 
-                  <select id="option">
-                    ${product.options.map(option => `
-                      <option
-                        ${option === state.option ? 'selected' : ''}
-                      >
-                        ${option}
-                      </option>
-                    `).join('')}
-                  </select>
-                </div>
-              `
-              : ''
-          }
+              <select id="option">
+                ${product.options.map(option => `
+                  <option ${option === state.option ? 'selected' : ''}>
+                    ${option}
+                  </option>
+                `).join('')}
+              </select>
+            </div>
+          ` : ''}
 
           <div class="detail-buttons">
 
             <div class="qty">
               <button data-qty="-">−</button>
-
-              <strong id="qtyValue">
-                ${state.quantity}
-              </strong>
-
+              <strong id="qtyValue">${state.quantity}</strong>
               <button data-qty="+">+</button>
             </div>
 
@@ -560,16 +718,12 @@ function productDetail(id) {
               class="btn"
               data-add="${product.id}"
               data-detail-add
-            >
-              ADD TO CART
-            </button>
+            >ADD TO CART</button>
 
             <button
               class="btn full light"
               data-order="${product.id}"
-            >
-              ORDER NOW
-            </button>
+            >ORDER NOW</button>
 
           </div>
         </div>
@@ -579,51 +733,56 @@ function productDetail(id) {
   );
 }
 
+/* -------------------- SHOPPING CART -------------------- */
+
+function addToCart(id, qty = state.quantity, afterLogin = 'cart') {
+  const product = find(id);
+  if (!product) return;
+
+  if (!isLoggedIn()) {
+    const optionSelect = document.querySelector('#option');
+    if (optionSelect) state.option = optionSelect.value;
+
+    state.pendingAction = {
+      id: product.id,
+      qty: Math.max(1, Number(qty) || 1),
+      option: product.options ? state.option : '',
+      afterLogin
+    };
+
+    state.pendingPage = afterLogin;
+    state.page = 'login';
+    closeDrawer();
+    render();
+    notify('Please log in or register to add items to your cart.');
+    return;
+  }
+
+  const option = product.options ? state.option : '';
+
+  const existing = state.cart.find(item =>
+    item.id === product.id && item.option === option
+  );
+
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    state.cart.push({
+      ...product,
+      qty,
+      option
+    });
+  }
+
+  saveUserData();
+  notify('Added to cart: ' + product.name);
+}
+
 function cart() {
   const total = state.cart.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
   );
-
-  const items = state.cart.map(item => `
-    <article class="cart-item">
-
-      <img
-        src="${asset(item.image)}"
-        alt="${item.name}"
-      >
-
-      <div>
-        <h3>${item.name}</h3>
-
-        <div>
-          ${
-            item.option
-              ? 'Option: ' + item.option
-              : ''
-          }
-        </div>
-
-        <div class="price">
-          ${money(item.price)}
-        </div>
-
-        <div class="qty small">
-          <button data-cartqty="-${item.id}">−</button>
-          <strong>${item.qty}</strong>
-          <button data-cartqty="+${item.id}">+</button>
-        </div>
-      </div>
-
-      <button
-        class="remove"
-        data-remove="${item.id}"
-      >
-        Remove
-      </button>
-
-    </article>
-  `).join('');
 
   return shell(
     'YOUR CART',
@@ -633,36 +792,64 @@ function cart() {
         <h1 class="section-title">CART</h1>
       </div>
 
-      ${
-        state.cart.length
-          ? `
-            <div class="cart-list">
-              ${items}
-            </div>
+      ${state.cart.length ? `
+        <div class="cart-list">
+          ${state.cart.map(item => `
+            <article class="cart-item">
 
-            <div class="subtotal">
-              <span>SUBTOTAL</span>
-              <strong>${money(total)}</strong>
-            </div>
+              <img
+                src="${asset(item.image)}"
+                alt="${item.name}"
+              >
 
-            <button class="btn full" data-page="checkout">
-              PROCEED TO CHECKOUT
-            </button>
-          `
-          : `
-            <div class="empty">
-              <h2>Your cart is waiting for a new grail.</h2>
-              <p>Browse our collectibles and add something you love.</p>
-              <button class="btn" data-page="onhand">
-                BROWSE ITEMS
-              </button>
-            </div>
-          `
-      }
+              <div>
+                <h3>${item.name}</h3>
+
+                <p>
+                  ${item.option ? 'Option: ' + item.option : ''}
+                </p>
+
+                <div class="price">${money(item.price)}</div>
+
+                <div class="qty small">
+                  <button data-cartqty="-${item.id}-${item.option}">−</button>
+                  <strong>${item.qty}</strong>
+                  <button data-cartqty="+${item.id}-${item.option}">+</button>
+                </div>
+              </div>
+
+              <button
+                class="remove"
+                data-remove="${item.id}-${item.option}"
+              >Remove</button>
+
+            </article>
+          `).join('')}
+        </div>
+
+        <div class="subtotal">
+          <span>SUBTOTAL</span>
+          <strong>${money(total)}</strong>
+        </div>
+
+        <button class="btn full" data-page="checkout">
+          PROCEED TO CHECKOUT
+        </button>
+      ` : `
+        <div class="empty">
+          <h2>Your cart is empty.</h2>
+          <p>Find something special for your collection.</p>
+          <button class="btn" data-page="onhand">
+            BROWSE ITEMS
+          </button>
+        </div>
+      `}
     `,
     'home'
   );
 }
+
+/* -------------------- CHECKOUT -------------------- */
 
 function checkout() {
   if (!state.cart.length) {
@@ -671,9 +858,7 @@ function checkout() {
       `
         <div class="empty">
           <h2>Your cart is empty.</h2>
-          <button class="btn" data-page="onhand">
-            Browse items
-          </button>
+          <button class="btn" data-page="onhand">Browse items</button>
         </div>
       `
     );
@@ -684,47 +869,51 @@ function checkout() {
     0
   );
 
+  const session = getCurrentUser();
+
   return shell(
     'CHECKOUT',
     `
       <div class="section-head">
-        <p class="eyebrow">SAFE & SECURE</p>
+        <p class="eyebrow">YOUR ORDER</p>
         <h1 class="section-title">CHECKOUT</h1>
       </div>
 
       <form id="checkoutForm">
 
-        <div class="info-box">
-          <strong>DELIVER TO</strong>
-          <div style="margin-top:10px">
-            Add your delivery details below before placing your order.
-          </div>
-        </div>
-
         <div class="form-grid" style="margin:24px 0">
 
-          <div class="field">
-            <label>Full name</label>
-            <input required name="name" placeholder="Your full name">
+          <div class="field full-field">
+            <label for="customerName">Full name</label>
+            <input
+              id="customerName"
+              required
+              name="name"
+              value="${session.name || ''}"
+              placeholder="Your full name"
+            >
           </div>
 
           <div class="field">
-            <label>Contact number</label>
+            <label for="phone">Contact number</label>
             <input
+              id="phone"
               required
               name="phone"
-              inputmode="tel"
+              type="tel"
               placeholder="09xx xxx xxxx"
             >
           </div>
 
           <div class="field full-field">
-            <label>Delivery address</label>
-            <input
+            <label for="address">Delivery address</label>
+            <textarea
+              id="address"
               required
               name="address"
+              rows="3"
               placeholder="House no., street, barangay, city"
-            >
+            ></textarea>
           </div>
 
         </div>
@@ -737,7 +926,7 @@ function checkout() {
           <input type="radio" name="payment" value="GCash" required>
           <span>
             <strong>GCash</strong>
-            <small>Full payment via verified GCash account</small>
+            <small>Full payment via GCash</small>
           </span>
         </label>
 
@@ -745,7 +934,7 @@ function checkout() {
           <input type="radio" name="payment" value="Bank Transfer">
           <span>
             <strong>Bank Transfer</strong>
-            <small>Full payment via verified bank account</small>
+            <small>Full payment via bank transfer</small>
           </span>
         </label>
 
@@ -758,32 +947,29 @@ function checkout() {
           >
           <span>
             <strong>50% Online + 50% COD</strong>
-            <small>Pay half now and the balance upon delivery</small>
+            <small>Half online, remaining balance on delivery</small>
           </span>
         </label>
 
         <div class="subtotal">
-          <span>PAY ONLINE NOW</span>
-          <strong id="payNow">${money(total / 2)}</strong>
+          <span>TOTAL</span>
+          <strong>${money(total)}</strong>
         </div>
 
-        <p style="text-align:right">
-          Balance upon delivery:
-          <strong>${money(total / 2)}</strong>
-        </p>
-
         <button class="btn full" type="submit">
-          PLACE ORDER
+          PLACE DEMO ORDER
         </button>
 
         <p class="muted">
-          Demo checkout only: no real payment will be collected.
+          Demo only. No real payment will be processed.
         </p>
 
       </form>
     `
   );
 }
+
+/* -------------------- FAVORITES -------------------- */
 
 function favorites() {
   const list = products.filter(product =>
@@ -795,53 +981,51 @@ function favorites() {
     `
       <div class="section-head">
         <p class="eyebrow">SAVED FOR LATER</p>
-        <h1 class="section-title">YOUR COLLECTION WISHLIST</h1>
+        <h1 class="section-title">YOUR WISHLIST</h1>
       </div>
 
-      ${
-        list.length
-          ? `<div class="product-grid">${list.map(card).join('')}</div>`
-          : `
-            <div class="empty">
-              <h2>No favorites saved yet.</h2>
-              <button class="btn" data-page="onhand">
-                Explore items
-              </button>
-            </div>
-          `
-      }
+      ${list.length
+        ? `<div class="product-grid">${list.map(card).join('')}</div>`
+        : `
+          <div class="empty">
+            <h2>No favorites saved yet.</h2>
+            <button class="btn" data-page="onhand">Explore items</button>
+          </div>
+        `}
     `,
     'cart'
   );
 }
 
+/* -------------------- PROFILE -------------------- */
+
 function profile() {
   const session = getCurrentUser();
-  const customerName = session ? session.name : 'Guest Collector';
-  const customerEmail = session ? session.email : 'Not logged in';
 
   return shell(
     'PROFILE',
     `
       <div class="profile-avatar">♙</div>
 
-      <h1 class="profile-name">${customerName}</h1>
+      <h1 class="profile-name">${session.name}</h1>
 
       <div class="profile-data">
+
+        <div>
+          <strong>FULL NAME</strong>
+          <span>${session.name}</span>
+        </div>
+
         <div>
           <strong>EMAIL</strong>
-          <span>${customerEmail}</span>
+          <span>${session.email}</span>
         </div>
 
         <div>
-          <strong>CONTACT NUMBER</strong>
-          <span>Not added yet</span>
+          <strong>ORDERS</strong>
+          <span>${state.orders.length} demo order(s)</span>
         </div>
 
-        <div>
-          <strong>ADDRESS</strong>
-          <span>Add your address at checkout</span>
-        </div>
       </div>
 
       <div class="profile-links">
@@ -853,22 +1037,16 @@ function profile() {
           TRANSACTION HISTORY <span>→</span>
         </button>
 
-        <button data-page="history">
-          TRACK ORDER <span>→</span>
-        </button>
-
         <button data-page="logout">
-          LOG OUT <span>↗</span>
+          LOG OUT <span>→</span>
         </button>
       </div>
-
-      <p class="muted">
-        Demo profile. Real account details require a backend.
-      </p>
     `,
     'home'
   );
 }
+
+/* -------------------- TRANSACTION HISTORY -------------------- */
 
 function history() {
   return shell(
@@ -879,8 +1057,8 @@ function history() {
         <h1 class="section-title">COLLECTION JOURNEY</h1>
       </div>
 
-      ${
-        state.orders.map(order => `
+      ${state.orders.length
+        ? state.orders.map(order => `
           <article class="history-card">
 
             <div class="history-top">
@@ -891,41 +1069,44 @@ function history() {
               </span>
             </div>
 
-            <div class="history-date">
-              ${order.date}
-            </div>
+            <div class="history-date">${order.date}</div>
 
             <h3>${order.name}</h3>
 
-            <div class="history-price">
-              ${money(order.price)}
-            </div>
+            <div class="history-price">${money(order.price)}</div>
 
           </article>
         `).join('')
-      }
+        : `
+          <div class="empty">
+            <h2>No orders yet.</h2>
+            <button class="btn" data-page="onhand">Browse items</button>
+          </div>
+        `}
     `,
     'home'
   );
 }
 
+/* -------------------- FAQ -------------------- */
+
 function faq() {
   const items = [
     [
       'Payment Methods',
-      'Pay securely through GCash, bank transfer, or our 50% online payment + 50% cash-on-delivery option. Payment instructions appear at checkout.'
+      'Choose a payment option during checkout. This demo does not collect real payments.'
     ],
     [
       'Delivery Methods',
-      'Delivery is arranged through available local couriers. Delivery fees and estimated arrival may vary depending on your location and the item.'
+      'Delivery arrangements and fees depend on the courier and destination.'
     ],
     [
       'Track Order',
-      'Open your profile and choose Transaction History to view the sample status of your orders. For a live store, connect order tracking to your fulfilment system.'
+      'Your demo order statuses are available in Transaction History.'
     ],
     [
       'Packaging',
-      'Items are packed carefully with protective materials to help keep collectibles safe during transit.'
+      'Collectibles should be carefully packed with protective materials.'
     ]
   ];
 
@@ -937,28 +1118,24 @@ function faq() {
         <h1 class="section-title">FREQUENTLY ASKED QUESTIONS</h1>
       </div>
 
-      ${
-        items.map((item, index) => `
-          <div class="faq-item">
+      ${items.map((item, index) => `
+        <div class="faq-item">
+          <button class="faq-question" data-faq="${index}">
+            ${item[0]}
+            <span>${state.faqOpen === index ? '−' : '+'}</span>
+          </button>
 
-            <button class="faq-question" data-faq="${index}">
-              ${item[0]}
-              <span>${state.faqOpen === index ? '−' : '+'}</span>
-            </button>
-
-            ${
-              state.faqOpen === index
-                ? `<div class="faq-answer">${item[1]}</div>`
-                : ''
-            }
-
-          </div>
-        `).join('')
-      }
+          ${state.faqOpen === index
+            ? `<div class="faq-answer">${item[1]}</div>`
+            : ''}
+        </div>
+      `).join('')}
     `,
     'home'
   );
 }
+
+/* -------------------- ABOUT US -------------------- */
 
 function about() {
   return shell(
@@ -967,16 +1144,13 @@ function about() {
       <div class="about-rule"></div>
 
       <h1 class="section-title" style="text-align:center">
-        ABOUT US
+        ABOUT GENGA
       </h1>
 
       <p class="about-copy">
-        Genga is an online shop made for anime fans and collectors
-        in the Philippines. We offer quality collectibles and
-        merchandise such as figures, plushies, acrylic stands,
-        keychains, and more. Our goal is to make hard-to-find anime
-        merchandise easier to access while giving fans a convenient
-        way to grow their collection.
+        Genga is an online shop concept for anime fans and collectors
+        in the Philippines. Discover figures, plushies, keychains,
+        and other collectibles while growing your collection.
       </p>
 
       <div class="about-rule"></div>
@@ -984,17 +1158,21 @@ function about() {
     'home'
   );
 }
+
+/* -------------------- LOGIN PAGE -------------------- */
+
 function login() {
   return shell(
     'LOGIN',
     `
       <section class="auth-section">
+
         <p class="eyebrow">WELCOME BACK, COLLECTOR</p>
 
         <h1 class="auth-title">LOGIN</h1>
 
         <p class="auth-description">
-          Sign in to access your GENGA account.
+          Sign in to add items to your cart, save favorites, and manage your orders.
         </p>
 
         <form class="auth-form" id="loginForm">
@@ -1005,6 +1183,7 @@ function login() {
               id="loginEmail"
               name="email"
               type="email"
+              autocomplete="email"
               placeholder="you@example.com"
               required
             >
@@ -1016,6 +1195,7 @@ function login() {
               id="loginPassword"
               name="password"
               type="password"
+              autocomplete="current-password"
               placeholder="Enter your password"
               required
             >
@@ -1023,9 +1203,7 @@ function login() {
 
           <p class="auth-error" id="loginError"></p>
 
-          <button class="btn" type="submit">
-            LOGIN
-          </button>
+          <button class="btn" type="submit">LOGIN</button>
 
         </form>
 
@@ -1033,23 +1211,27 @@ function login() {
           Don't have an account?
           <button data-page="register">Register here</button>
         </div>
+
       </section>
     `,
-    'home'
+    'login'
   );
 }
+
+/* -------------------- REGISTER PAGE -------------------- */
 
 function register() {
   return shell(
     'REGISTER',
     `
       <section class="auth-section">
+
         <p class="eyebrow">JOIN THE COLLECTION</p>
 
         <h1 class="auth-title">CREATE ACCOUNT</h1>
 
         <p class="auth-description">
-          Register to start building your collection.
+          Create an account to add items to your cart, save favorites, and manage your orders.
         </p>
 
         <form class="auth-form" id="registerForm">
@@ -1060,6 +1242,7 @@ function register() {
               id="regName"
               name="name"
               type="text"
+              autocomplete="name"
               placeholder="Your full name"
               required
             >
@@ -1071,6 +1254,7 @@ function register() {
               id="regEmail"
               name="email"
               type="email"
+              autocomplete="email"
               placeholder="you@example.com"
               required
             >
@@ -1082,6 +1266,7 @@ function register() {
               id="regPassword"
               name="password"
               type="password"
+              autocomplete="new-password"
               minlength="8"
               placeholder="At least 8 characters"
               required
@@ -1094,6 +1279,7 @@ function register() {
               id="regConfirm"
               name="confirmPassword"
               type="password"
+              autocomplete="new-password"
               minlength="8"
               placeholder="Re-enter your password"
               required
@@ -1112,42 +1298,45 @@ function register() {
           Already registered?
           <button data-page="login">Login here</button>
         </div>
+
       </section>
     `,
-    'home'
+    'login'
   );
 }
 
-function updateAuthUI() {
-  const loggedIn = isLoggedIn();
+/* -------------------- LOGOUT -------------------- */
 
-  document.querySelectorAll('[data-auth-only]').forEach(element => {
-    element.hidden = !loggedIn;
-  });
+function logoutDemo() {
+  saveUserData();
 
-  document.querySelectorAll('[data-guest-only]').forEach(element => {
-    element.hidden = loggedIn;
-  });
+  localStorage.removeItem('gengaDemoSession');
 
-  const profileButton = document.querySelector('.profile-shortcut');
-  if (profileButton) {
-    profileButton.dataset.page = loggedIn ? 'profile' : 'login';
-    profileButton.setAttribute(
-      'aria-label',
-      loggedIn ? 'My account' : 'Login'
-    );
-  }
+  state.cart = [];
+  state.favorites = [];
+  state.orders = [];
+  state.search = '';
+  state.quantity = 1;
+  state.page = 'login';
 
-  const menuToggle = document.querySelector('#menuToggle');
-  if (menuToggle) {
-    menuToggle.setAttribute('aria-expanded', drawer.classList.contains('open') ? 'true' : 'false');
-  }
+  closeDrawer();
+  render();
+
+  notify('You have logged out successfully.');
 }
 
+/* -------------------- RENDER PAGES -------------------- */
+
 function render() {
-  // Only Login and Register are accessible without a session.
-  if (!publicPages.has(state.page) && !isLoggedIn()) {
+  // Allow public browsing. Protect only account and purchase pages.
+  if (ACCOUNT_PAGES.includes(state.page) && !isLoggedIn()) {
+    state.pendingPage = state.page;
     state.page = 'login';
+  }
+
+  // Logged-in users should not see login/register pages.
+  if (['login', 'register'].includes(state.page) && isLoggedIn()) {
+    state.page = 'home';
   }
 
   const pages = {
@@ -1167,98 +1356,62 @@ function render() {
   };
 
   app.innerHTML = (pages[state.page] || login)();
-  updateAuthUI();
 
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
+  // Visitors can browse public pages. Account/purchase pages stay hidden
+  // until login; login/register disappear once the user is authenticated.
+  document.querySelectorAll('#drawer [data-page]').forEach(button => {
+    const page = button.dataset.page;
+    const loggedIn = isLoggedIn();
+    const protectedPage = ACCOUNT_PAGES.includes(page);
+    const authPage = ['login', 'register'].includes(page);
+
+    if (page === 'logout') {
+      button.hidden = !loggedIn;
+    } else if (protectedPage) {
+      button.hidden = !loggedIn;
+    } else if (authPage) {
+      button.hidden = loggedIn;
+    } else {
+      button.hidden = false;
+    }
   });
+
+  window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
-function go(page) {
-  if (page === 'logout') {
-    logoutDemo();
-    return;
-  }
+/* -------------------- MENU EVENTS -------------------- */
 
-  if (!publicPages.has(page) && !isLoggedIn()) {
-    state.page = 'login';
-    closeDrawer();
-    render();
-    notify('Please log in or create an account first.');
-    return;
-  }
+if (drawer && scrim) {
+  document.querySelector('#menuToggle').addEventListener('click', () => {
+    drawer.classList.add('open');
+    scrim.classList.add('show');
+    drawer.setAttribute('aria-hidden', 'false');
 
-  if (page === 'product') {
-    state.previous = state.page;
-  }
+    document.querySelector('#menuToggle')
+      .setAttribute('aria-expanded', 'true');
+  });
 
-  state.page = page;
-  closeDrawer();
-  render();
+  document.querySelector('#closeMenu')
+    .addEventListener('click', closeDrawer);
+
+  scrim.addEventListener('click', closeDrawer);
 }
 
-function addToCart(id, qty = state.quantity) {
-  const product = find(id);
-
-  if (!product) return;
-
-  const option = product.options ? state.option : '';
-
-  const existing = state.cart.find(item =>
-    item.id === product.id &&
-    item.option === option
-  );
-
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    state.cart.push({
-      ...product,
-      qty,
-      option
-    });
-  }
-
-  notify(`${product.name} added to cart`);
-}
-
-function closeDrawer() {
-  drawer.classList.remove('open');
-  scrim.classList.remove('show');
-  drawer.setAttribute('aria-hidden', 'true');
-  const menuToggle = document.querySelector('#menuToggle');
-  if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
-}
-
-/* Navigation menu */
-
-document.querySelector('#menuToggle').addEventListener('click', () => {
-  drawer.classList.add('open');
-  scrim.classList.add('show');
-  drawer.setAttribute('aria-hidden', 'false');
-  document.querySelector('#menuToggle').setAttribute('aria-expanded', 'true');
-});
-
-document.querySelector('#closeMenu').addEventListener('click', closeDrawer);
-scrim.addEventListener('click', closeDrawer);
-
-/* All page and product interactions */
+/* -------------------- CLICK EVENTS -------------------- */
 
 document.addEventListener('click', event => {
-  const target = event.target.closest('button, a[data-page], [data-product]');
+  const target = event.target.closest(
+    'button, [data-product], a[data-page]'
+  );
 
   if (!target) return;
 
   if (target.dataset.page) {
-  if (target.dataset.page === 'logout') {
-    logoutDemo();
+    event.preventDefault();
+    go(target.dataset.page);
     return;
   }
 
-  go(target.dataset.page);
-  return;
-}
   if (target.hasAttribute('data-back')) {
     if (state.page === 'product') {
       go(state.previous);
@@ -1274,16 +1427,29 @@ document.addEventListener('click', event => {
   if (target.dataset.product) {
     state.selected = Number(target.dataset.product);
     state.quantity = 1;
+    state.previous = state.page;
     go('product');
     return;
   }
 
   if (target.dataset.fav) {
+    if (!isLoggedIn()) {
+      state.pendingPage = 'favorites';
+      state.page = 'login';
+      closeDrawer();
+      render();
+      notify('Please log in or create an account to save favorites.');
+      return;
+    }
+
     const id = Number(target.dataset.fav);
 
     state.favorites = state.favorites.includes(id)
       ? state.favorites.filter(item => item !== id)
       : [...state.favorites, id];
+
+    saveUserData();
+    render();
 
     notify(
       state.favorites.includes(id)
@@ -1291,16 +1457,14 @@ document.addEventListener('click', event => {
         : 'Removed from favorites'
     );
 
-    render();
     return;
   }
 
   if (target.dataset.add) {
-    if (
-      target.hasAttribute('data-detail-add') &&
-      document.querySelector('#option')
-    ) {
-      state.option = document.querySelector('#option').value;
+    if (target.hasAttribute('data-detail-add')) {
+      const option = document.querySelector('#option');
+
+      if (option) state.option = option.value;
     }
 
     addToCart(target.dataset.add);
@@ -1308,8 +1472,8 @@ document.addEventListener('click', event => {
   }
 
   if (target.dataset.order) {
-    addToCart(target.dataset.order);
-    go('checkout');
+    addToCart(target.dataset.order, state.quantity, 'checkout');
+    if (isLoggedIn()) go('checkout');
     return;
   }
 
@@ -1319,40 +1483,45 @@ document.addEventListener('click', event => {
       state.quantity + (target.dataset.qty === '+' ? 1 : -1)
     );
 
-    const quantityDisplay = document.querySelector('#qtyValue');
+    const display = document.querySelector('#qtyValue');
 
-    if (quantityDisplay) {
-      quantityDisplay.textContent = state.quantity;
-    }
+    if (display) display.textContent = state.quantity;
 
     return;
   }
 
   if (target.dataset.remove) {
-    state.cart = state.cart.filter(
-      item => item.id !== Number(target.dataset.remove)
+    const [id, ...optionParts] = target.dataset.remove.split('-');
+    const option = optionParts.join('-');
+
+    state.cart = state.cart.filter(item =>
+      !(item.id === Number(id) && item.option === option)
     );
 
+    saveUserData();
     render();
     return;
   }
 
   if (target.dataset.cartqty) {
-    const sign = target.dataset.cartqty[0];
-    const id = Number(target.dataset.cartqty.slice(1));
+    const [direction, id, ...optionParts] =
+      target.dataset.cartqty.split('-');
 
-    const item = state.cart.find(item => item.id === id);
+    const option = optionParts.join('-');
+
+    const item = state.cart.find(item =>
+      item.id === Number(id) && item.option === option
+    );
 
     if (item) {
-      item.qty += sign === '+' ? 1 : -1;
+      item.qty += direction === '+' ? 1 : -1;
 
       if (item.qty <= 0) {
-        state.cart = state.cart.filter(
-          cartItem => cartItem !== item
-        );
+        state.cart = state.cart.filter(cartItem => cartItem !== item);
       }
     }
 
+    saveUserData();
     render();
     return;
   }
@@ -1367,7 +1536,7 @@ document.addEventListener('click', event => {
   }
 });
 
-/* Filters and product options */
+/* -------------------- FILTERS -------------------- */
 
 document.addEventListener('change', event => {
   if (event.target.id === 'sort') {
@@ -1385,7 +1554,7 @@ document.addEventListener('change', event => {
   }
 });
 
-/* Product search */
+/* -------------------- SEARCH -------------------- */
 
 document.addEventListener('input', event => {
   if (event.target.id !== 'search') return;
@@ -1404,162 +1573,195 @@ document.addEventListener('input', event => {
   }
 });
 
-/* Demo checkout */
+/* -------------------- REGISTRATION -------------------- */
+
+document.addEventListener('submit', event => {
+  const form = event.target;
+
+  if (form.id !== 'registerForm') return;
+
+  event.preventDefault();
+
+  const data = new FormData(form);
+
+  const name = String(data.get('name') || '').trim();
+  const email = String(data.get('email') || '')
+    .trim()
+    .toLowerCase();
+
+  const password = String(data.get('password') || '');
+  const confirmPassword = String(
+    data.get('confirmPassword') || ''
+  );
+
+  const error = document.querySelector('#registerError');
+
+  if (password.length < 8) {
+    error.textContent = 'Password must be at least 8 characters.';
+    error.style.display = 'block';
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    error.textContent = 'Passwords do not match.';
+    error.style.display = 'block';
+    return;
+  }
+
+  const users = getUsers();
+
+  if (users.some(user => user.email === email)) {
+    error.textContent =
+      'This email is already registered. Please log in.';
+    error.style.display = 'block';
+    return;
+  }
+
+  users.push({
+    name,
+    email,
+    password
+  });
+
+  localStorage.setItem(
+    'gengaDemoUsers',
+    JSON.stringify(users)
+  );
+
+  notify('Account created! Please log in.');
+
+  state.page = 'login';
+  render();
+});
+
+/* -------------------- LOGIN -------------------- */
+
+document.addEventListener('submit', event => {
+  const form = event.target;
+
+  if (form.id !== 'loginForm') return;
+
+  event.preventDefault();
+
+  const data = new FormData(form);
+
+  const email = String(data.get('email') || '')
+    .trim()
+    .toLowerCase();
+
+  const password = String(data.get('password') || '');
+
+  const error = document.querySelector('#loginError');
+
+  const user = getUsers().find(user =>
+    user.email === email &&
+    user.password === password
+  );
+
+  if (!user) {
+    error.textContent = 'Incorrect email or password.';
+    error.style.display = 'block';
+    return;
+  }
+
+  localStorage.setItem(
+    'gengaDemoSession',
+    JSON.stringify({
+      name: user.name,
+      email: user.email
+    })
+  );
+
+  loadUserData();
+
+  state.search = '';
+  const pendingAction = state.pendingAction;
+  const nextPage = state.pendingPage || 'home';
+  state.pendingAction = null;
+  state.pendingPage = null;
+
+  if (pendingAction) {
+    state.option = pendingAction.option || state.option;
+    addToCart(pendingAction.id, pendingAction.qty);
+    state.page = pendingAction.afterLogin || 'cart';
+  } else {
+    state.page = nextPage;
+  }
+
+  render();
+  notify('Welcome to GENGA, ' + user.name + '!');
+});
+
+/* -------------------- CHECKOUT SUBMISSION -------------------- */
 
 document.addEventListener('submit', event => {
   if (event.target.id !== 'checkoutForm') return;
 
   event.preventDefault();
 
+  if (!isLoggedIn()) {
+    go('login');
+    return;
+  }
+
+  if (!state.cart.length) {
+    notify('Your cart is empty.');
+    go('cart');
+    return;
+  }
+
+  const form = event.target;
+  const data = new FormData(form);
+
   const total = state.cart.reduce(
     (sum, item) => sum + item.price * item.qty,
     0
   );
 
-  const orderName = state.cart
-    .map(item => `${item.name} ×${item.qty}`)
-    .join(', ');
+  const session = getCurrentUser();
 
   state.orders.unshift({
     id: 'GENGA-' + String(Date.now()).slice(-6),
 
-    date: new Date().toLocaleDateString('en-US', {
+    date: new Date().toLocaleDateString('en-PH', {
+      year: 'numeric',
       month: 'long',
-      day: 'numeric',
-      year: 'numeric'
+      day: 'numeric'
     }),
 
-    name: orderName,
+    name: state.cart.map(item =>
+      `${item.name} ×${item.qty}`
+    ).join(', '),
+
     price: total,
-    status: 'Processing'
+    status: 'Processing',
+    customer: session.email,
+    customerName: data.get('name'),
+    phone: data.get('phone'),
+    address: data.get('address'),
+    payment: data.get('payment')
   });
 
   state.cart = [];
+
+  saveUserData();
+
   state.page = 'history';
-
   render();
 
-  notify('Demo order placed successfully');
-});
-// DEMO AUTHENTICATION ONLY
-// Do not use localStorage for real customer passwords.
-
-document.addEventListener('submit', function(event) {
-  const form = event.target;
-
-  if (form.id === 'registerForm') {
-    event.preventDefault();
-
-    const data = new FormData(form);
-    const name = data.get('name').trim();
-    const email = data.get('email').trim().toLowerCase();
-    const password = data.get('password');
-    const confirmPassword = data.get('confirmPassword');
-
-    const error = document.querySelector('#registerError');
-
-    if (password.length < 8) {
-      error.textContent =
-        'Password must contain at least 8 characters.';
-      error.style.display = 'block';
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      error.textContent = 'Passwords do not match.';
-      error.style.display = 'block';
-      return;
-    }
-
-    let users;
-    try {
-      users = JSON.parse(localStorage.getItem('gengaDemoUsers') || '[]');
-      if (!Array.isArray(users)) users = [];
-    } catch {
-      users = [];
-    }
-
-    if (users.some(user => user.email === email)) {
-      error.textContent =
-        'This email is already registered. Please log in.';
-      error.style.display = 'block';
-      return;
-    }
-
-    users.push({
-      name,
-      email,
-      password
-    });
-
-    localStorage.setItem(
-      'gengaDemoUsers',
-      JSON.stringify(users)
-    );
-
-    notify('Registration successful! Please log in.');
-
-    go('login');
-    return;
-  }
-
-  if (form.id === 'loginForm') {
-    event.preventDefault();
-
-    const data = new FormData(form);
-    const email = data.get('email').trim().toLowerCase();
-    const password = data.get('password');
-
-    const error = document.querySelector('#loginError');
-
-    let users;
-    try {
-      users = JSON.parse(localStorage.getItem('gengaDemoUsers') || '[]');
-      if (!Array.isArray(users)) users = [];
-    } catch {
-      users = [];
-    }
-
-    const user = users.find(user =>
-      user.email === email &&
-      user.password === password
-    );
-
-    if (!user) {
-      error.textContent =
-        'Incorrect email or password.';
-      error.style.display = 'block';
-      return;
-    }
-
-    // Store only basic demo session information.
-    localStorage.setItem(
-      'gengaDemoSession',
-      JSON.stringify({
-        name: user.name,
-        email: user.email
-      })
-    );
-
-    notify('Welcome back, ' + user.name + '!');
-
-    go('home');
-  }
+  notify('Demo order placed successfully!');
 });
 
-// Demo logout
-
-function logoutDemo() {
-  localStorage.removeItem('gengaDemoSession');
-  state.cart = [];
-  state.favorites = [];
-  state.page = 'login';
-  closeDrawer();
-  render();
-  notify('You have logged out successfully.');
-}
-/* Start the website */
+/* -------------------- INITIALIZATION -------------------- */
 
 state.faqOpen = 0;
+
+if (isLoggedIn()) {
+  loadUserData();
+  state.page = 'home';
+} else {
+  // Guests can browse the store without signing in.
+  state.page = 'home';
+}
 
 render();
