@@ -1056,11 +1056,11 @@ function faq() {
   const items = [
     [
       'Payment Methods',
-      'Choose a payment option during checkout. This does not collect real payments.'
+      'Pay through GCash, bank transfer, or 50% online payment + 50% cash on delivery.'
     ],
     [
       'Delivery Methods',
-      'Delivery arrangements and fees depend on the courier and destination.'
+      'We ship nationwide through trusted local couriers. Delivery fees vary by desitination'
     ],
     [
       'Track Order',
@@ -1068,7 +1068,7 @@ function faq() {
     ],
     [
       'Packaging',
-      'Collectibles should be carefully packed with protective materials.'
+      'Every collections is checked , wrapped in protective materials, and placed in a secure box'
     ]
   ];
 
@@ -1395,21 +1395,29 @@ function render() {
       <button data-page="logout">LOG OUT</button>
     `;
   } else if (nav && !adminMode) {
-    // Restore the normal customer navigation after the admin logs out.
-    nav.innerHTML = `
-      <button data-page="home" data-auth-only>HOME</button>
-      <button data-page="onhand" data-auth-only>ON-HAND ITEMS</button>
-      <button data-page="preorder" data-auth-only>PRE-ORDER ITEMS</button>
-      <button data-page="favorites" data-auth-only>FAVORITES ♡</button>
-      <button data-page="cart" data-auth-only>YOUR CART</button>
-      <button data-page="history" data-auth-only>TRANSACTION HISTORY</button>
-      <button data-page="track" data-auth-only>TRACK ORDER</button>
-      <button class="nav-divider" data-page="about" data-auth-only>ABOUT US</button>
-      <button data-page="faq" data-auth-only>FAQ</button>
-      <button class="nav-divider" data-page="profile" data-auth-only>MY PROFILE</button>
-      <button data-page="login" data-guest-only>LOGIN</button>
-      <button data-page="register" data-guest-only>CREATE ACCOUNT</button>
-      <button data-page="logout" data-auth-only>LOG OUT</button>
+    // Guests see only public browsing pages and sign-in options.
+    // Customer-only links appear only after a valid customer login.
+    const loggedIn = isLoggedIn();
+    nav.innerHTML = loggedIn ? `
+      <button data-page="home">HOME</button>
+      <button data-page="onhand">ON-HAND ITEMS</button>
+      <button data-page="preorder">PRE-ORDER ITEMS</button>
+      <button data-page="favorites">FAVORITES ♡</button>
+      <button data-page="cart">YOUR CART</button>
+      <button data-page="history">TRANSACTION HISTORY</button>
+      <button data-page="track">TRACK ORDER</button>
+      <button class="nav-divider" data-page="about">ABOUT US</button>
+      <button data-page="faq">FAQ</button>
+      <button class="nav-divider" data-page="profile">MY PROFILE</button>
+      <button data-page="logout">LOG OUT</button>
+    ` : `
+      <button data-page="home">HOME</button>
+      <button data-page="onhand">ON-HAND ITEMS</button>
+      <button data-page="preorder">PRE-ORDER ITEMS</button>
+      <button class="nav-divider" data-page="about">ABOUT US</button>
+      <button data-page="faq">FAQ</button>
+      <button class="nav-divider" data-page="login">LOGIN</button>
+      <button data-page="register">CREATE ACCOUNT</button>
     `;
   }
 
@@ -1423,10 +1431,15 @@ function render() {
       topProfile.setAttribute('aria-label', 'Log out');
       topProfile.title = 'Log out';
       topProfile.textContent = '⇥';
-    } else {
+    } else if (isLoggedIn()) {
       topProfile.dataset.page = 'profile';
       topProfile.setAttribute('aria-label', 'My account');
       topProfile.title = 'My account';
+      topProfile.textContent = '♙';
+    } else {
+      topProfile.dataset.page = 'login';
+      topProfile.setAttribute('aria-label', 'Log in');
+      topProfile.title = 'Log in';
       topProfile.textContent = '♙';
     }
   }

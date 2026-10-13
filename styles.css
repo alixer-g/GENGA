@@ -3400,3 +3400,21 @@ html, body { max-width: 100%; overflow-x: hidden; }
   #app .payment-option { padding: 13px; align-items: flex-start; }
   #app .payment-option strong { font-size: 18px; }
 }
+
+/* FIX: Keep the open navigation drawer above sticky page headers,
+   including the Profile header on mobile and tablet screens. */
+.drawer {
+  z-index: 1000 !important;
+}
+.drawer.open {
+  z-index: 1000 !important;
+}
+.scrim {
+  z-index: 999 !important;
+}
+.scrim.show {
+  z-index: 999 !important;
+}
+#app .page-header {
+  z-index: 120;
+}
