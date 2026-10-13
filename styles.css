@@ -508,7 +508,7 @@ img {
   background: var(--cream);
   border-bottom: 1px solid var(--teal);
   display: grid;
-  grid-template-columns: 50px 1fr 50px;
+  grid-template-columns: minmax(0, 1fr) 50px;
   align-items: center;
   gap: 10px;
   padding: 14px clamp(16px, 4vw, 45px);
@@ -520,8 +520,10 @@ img {
 .page-header h2 {
   text-align: center;
   margin: 0;
+  min-width: 0;
   font: clamp(17px, 3vw, 27px) var(--display);
   color: var(--teal);
+  overflow-wrap: anywhere;
 }
 
 .page-header .icon-btn {
@@ -1048,7 +1050,7 @@ img {
 
   .page-header {
     top: 58px;
-    grid-template-columns: 38px 1fr 38px;
+    grid-template-columns: minmax(0, 1fr) 38px;
     padding: 10px 12px;
     gap: 5px;
   }
@@ -1636,7 +1638,7 @@ button {
 
   .page-header {
     display: grid;
-    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    grid-template-columns: minmax(0, 1fr) 42px;
     align-items: center;
     gap: 8px;
   }
@@ -2810,7 +2812,7 @@ body:has(.admin-modal-backdrop) { overflow: hidden; }
 
   #app .page-header {
     top: 58px;
-    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    grid-template-columns: minmax(0, 1fr) 40px;
     gap: 6px;
     padding: 10px 12px;
   }
@@ -2989,7 +2991,7 @@ body:has(.admin-modal-backdrop) { overflow: hidden; }
 
 @media (max-width: 600px) {
   #app .page-header {
-    grid-template-columns: 38px minmax(0, 1fr) 38px !important;
+    grid-template-columns: minmax(0, 1fr) 38px !important;
     gap: 6px !important; padding: 10px 12px !important;
   }
   #app .page-header h2 { font-size: clamp(15px, 4.1vw, 21px) !important; letter-spacing:.2px; }
@@ -3081,4 +3083,320 @@ body:has(.admin-modal-backdrop) { overflow: hidden; }
     text-align: center;
     line-height: 1.1;
   }
+}
+
+
+/* ADMIN-ONLY SESSION: hide customer footer and keep the admin navigation focused */
+body.admin-mode .footer { display: none !important; }
+body.admin-mode .topbar .brand-mini { cursor: default; }
+body.admin-mode .page-header.admin-page-header { grid-template-columns: 50px 1fr 50px; }
+body.admin-mode .page-header.admin-page-header [data-back] { visibility: hidden; pointer-events: none; }
+#drawer nav button.admin-nav-active { background: #d4ebe7; border-radius: 10px; padding-left: 12px; }
+
+
+/* ADMIN HEADER LAYOUT FIX — prevent narrow grid columns from stacking title letters */
+body.admin-mode #app .page-header.admin-page-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 48px !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 72px !important;
+  height: auto !important;
+  padding: 12px clamp(16px, 4vw, 45px) !important;
+  box-sizing: border-box !important;
+}
+body.admin-mode #app .page-header.admin-page-header [data-back] {
+  display: none !important;
+}
+body.admin-mode #app .page-header.admin-page-header h2 {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  line-height: 1.15 !important;
+  text-align: left !important;
+  font-size: clamp(16px, 2.5vw, 25px) !important;
+}
+body.admin-mode #app .page-header.admin-page-header [data-page="logout"] {
+  display: grid !important;
+  place-items: center !important;
+  justify-self: end !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  flex-shrink: 0 !important;
+}
+/* Admin has its own focused navigation; remove the customer hamburger from the topbar. */
+body.admin-mode .topbar .menu-toggle {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+@media (max-width: 600px) {
+  body.admin-mode #app .page-header.admin-page-header {
+    grid-template-columns: minmax(0, 1fr) 40px !important;
+    min-height: 62px !important;
+    padding: 10px 14px !important;
+    gap: 8px !important;
+  }
+  body.admin-mode #app .page-header.admin-page-header h2 {
+    font-size: clamp(15px, 4.5vw, 20px) !important;
+  }
+  body.admin-mode #app .page-header.admin-page-header [data-page="logout"] {
+    width: 38px !important; height: 38px !important; min-width: 38px !important;
+  }
+}
+
+
+/* Admin stock and price editor */
+#stockEditorHost .admin-modal form#stockEditForm {
+  display: grid;
+  gap: 16px;
+}
+#stockEditorHost #stockEditForm .field {
+  display: grid;
+  gap: 7px;
+}
+#stockEditorHost #stockEditForm label {
+  display: block;
+  font-weight: 800;
+}
+#stockEditorHost #stockEditForm input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+#stockEditorHost #stockEditForm .admin-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+#stockEditorHost .admin-modal {
+  max-width: 480px;
+  width: calc(100% - 32px);
+  box-sizing: border-box;
+}
+
+
+/* Admin inventory image picker, clearer numeric inputs, and stock feedback */
+#app .admin-product-form .field { min-width: 0; align-content: start; }
+#app .admin-product-form input[type="number"],
+#stockEditorHost input[type="number"] { font-variant-numeric: tabular-nums; }
+.field-hint { display:block; color:var(--muted); font-size:14px; line-height:1.3; margin-top:3px; }
+.admin-image-preview { display:flex; align-items:center; gap:12px; margin-top:8px; padding:8px; border:1px dashed var(--line); border-radius:12px; color:var(--teal); font-size:15px; }
+.admin-image-preview[hidden] { display:none !important; }
+.admin-image-preview img { width:76px; height:76px; object-fit:contain; border-radius:8px; background:#fff; }
+.product-stock { margin:4px 0 0; color:var(--teal); font-size:15px; font-weight:800; }
+.product-stock.out { color:#b42318; }
+.product-actions .btn:disabled { opacity:.55; cursor:not-allowed; box-shadow:none; transform:none; }
+#app .admin-product-form input[type="file"] { width:100%; min-width:0; padding:10px; border:1.5px dashed var(--line); border-radius:10px; background:#fffaf3; color:var(--ink); font-size:15px; }
+
+
+/* FIX: page headers now have only a title and one action button (no back button). */
+#app .page-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 44px !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+#app .page-header h2 {
+  min-width: 0 !important;
+  width: 100% !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+#app .page-header .icon-btn {
+  grid-column: 2 !important;
+  justify-self: end !important;
+}
+@media (max-width: 600px) {
+  #app .page-header {
+    grid-template-columns: minmax(0, 1fr) 38px !important;
+    gap: 6px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  #app .page-header h2 {
+    font-size: clamp(15px, 4.1vw, 21px) !important;
+  }
+}
+
+
+/* Collection pages: dedicated back-to-home button */
+.collection-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 10px 18px;
+  border: 2px solid var(--teal);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--teal);
+  font: 16px var(--display);
+  box-shadow: 3px 4px 0 var(--deep);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.collection-back:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 5px 0 var(--deep);
+}
+.collection-back:focus-visible {
+  outline: 3px solid #f2b96f;
+  outline-offset: 3px;
+}
+/* Admin dashboard has one logout control in the top navigation; hide the duplicate page-header control. */
+body.admin-mode .page-header.admin-page-header {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+/* GENGA requested refinements */
+.footer > div { display: none !important; }
+.featured-simple { cursor: pointer; }
+.featured-simple .product-body { min-height: 110px; }
+.featured-simple .product-name { margin-bottom: 0; }
+.drawer nav button { position: relative; }
+.drawer nav button:nth-child(5) { margin-bottom: 14px; }
+.drawer nav button:nth-child(6) { border-top: 3px solid var(--teal); padding-top: 28px; }
+.drawer nav button:nth-child(9) { border-top: 3px solid var(--teal); padding-top: 28px; margin-top: 12px; }
+.password-toggle { align-self: end; margin-top: -48px; margin-right: 10px; z-index: 2; border: 0; background: transparent; color: var(--teal); padding: 8px; }
+.field:has(.password-toggle) input { padding-right: 54px; }
+.payment-split { border: 1px solid var(--line); border-radius: 14px; padding: 12px 18px; margin: 12px 0 22px; background: #e5f4f0; }
+.payment-split p { display: flex; justify-content: space-between; gap: 12px; }
+.payment-split[hidden] { display: none; }
+.tracking-steps { background: #e5f4f0; border-left: 4px solid var(--teal); padding: 12px 16px; margin-top: 16px; border-radius: 8px; }
+.detail-choice-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: end; gap: 16px; margin: 24px 0; }
+.detail-choice-row .qty { min-height: 48px; }
+.detail-buttons { grid-template-columns: 1fr 1fr; }
+.detail-buttons .btn { min-height: 56px; }
+.admin-product-thumb { width: 62px; height: 62px; object-fit: cover; border-radius: 8px; }
+@media(max-width:600px) {
+  .detail-choice-row { grid-template-columns: 1fr; }
+  .detail-buttons { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .detail-buttons .btn { font-size: 15px; padding: 12px 8px; }
+  .collection-panel { width: 100%; }
+}
+
+.drawer nav button.nav-divider { border-top: 3px solid var(--teal); padding-top: 28px; margin-top: 12px; }
+
+
+/* Password visibility control: align the eye inside the input, not over the text. */
+#app .field:has(> .password-toggle) { position: relative; min-width: 0; }
+#app .field > .password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 31px;
+  margin: 0;
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--teal);
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 3;
+}
+#app .field:has(> .password-toggle) input { padding-right: 54px !important; }
+#app .field > .password-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+
+/* Inventory page back navigation and tablet/mobile layout. */
+#app .inventory-back {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 0 0 22px; padding: 10px 16px; max-width: 100%;
+  border: 2px solid var(--teal); border-radius: 999px;
+  background: var(--paper); color: var(--teal);
+  font: 15px var(--display); box-shadow: 3px 4px 0 var(--deep);
+  white-space: normal; text-align: center;
+}
+#app .inventory-back:hover { transform: translateY(-1px); }
+#app .admin-product-form > .field { min-width: 0; }
+#app .admin-product-form input, #app .admin-product-form select, #app .admin-product-form textarea { max-width: 100%; min-width: 0; }
+#app .admin-table-wrap { max-width: 100%; -webkit-overflow-scrolling: touch; }
+@media (max-width: 900px) {
+  #app .admin-product-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #app .admin-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  #app .inventory-back { width: 100%; justify-content: center; font-size: 13px; padding: 11px 12px; }
+  #app .admin-product-form, #app .admin-stats { grid-template-columns: minmax(0, 1fr); }
+  #app .admin-product-form .btn { grid-column: auto; width: 100%; }
+  #app .admin-panel { padding: 14px; }
+  #app .admin-table { min-width: 680px; }
+  #app .field > .password-toggle { top: 29px; width: 40px; height: 40px; }
+}
+
+
+/* Checkout saved profile details and track-order page */
+.checkout-contact-card, .track-order-card { background: var(--paper); border: 1.5px solid var(--line); border-radius: 22px; padding: clamp(16px, 3vw, 28px); margin: 18px 0 24px; min-width: 0; }
+.checkout-contact-card h2, .payment-heading, .track-recent-heading { color: var(--teal); font: clamp(22px, 4vw, 30px) var(--display); margin: 0 0 12px; }
+.checkout-contact-card p { line-height: 1.45; }
+.checkout-contact-card input[readonly], .checkout-contact-card textarea[readonly] { background: #f0eadf; color: var(--ink); opacity: 1; cursor: default; }
+.inline-link { border: 0; background: transparent; color: var(--teal); font-weight: 900; text-decoration: underline; padding: 0; }
+.checkout-warning { border-left: 4px solid #c17b26; background: #fff0d6; padding: 12px; border-radius: 8px; }
+#checkoutForm button:disabled { opacity: .55; cursor: not-allowed; }
+.track-search { display: flex; gap: 10px; align-items: stretch; margin: 28px 0; background: var(--paper); border: 2px solid var(--teal2); border-radius: 999px; padding: 5px; min-width: 0; }
+.track-search input { flex: 1; min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; padding: 12px 16px; color: var(--ink); }
+.track-search .btn { flex: 0 0 auto; box-shadow: none; border-color: var(--teal2); }
+.track-order-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.track-order-top .eyebrow { color: var(--teal); overflow-wrap: anywhere; }
+.track-order-top h2 { color: var(--teal); font: clamp(22px, 4vw, 30px) var(--display); margin: 0 0 8px; overflow-wrap: anywhere; }
+.track-order-date { color: var(--muted); font-size: 15px; }
+.track-timeline { list-style: none; margin: 24px 0 0; padding: 0; display: grid; gap: 0; }
+.track-timeline li { display: flex; align-items: flex-start; gap: 12px; position: relative; padding: 0 0 22px; min-width: 0; }
+.track-timeline li:not(:last-child):before { content: ''; position: absolute; left: 16px; top: 34px; bottom: -2px; width: 3px; background: #bdd9d3; }
+.track-dot { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; background: #bdd9d3; color: var(--deep); display: grid; place-items: center; font-weight: 900; z-index: 1; }
+.track-timeline li.done .track-dot, .track-timeline li.current .track-dot { background: var(--teal2); color: white; }
+.track-timeline li div { min-width: 0; padding-top: 4px; }
+.track-timeline li strong { display: block; overflow-wrap: anywhere; }
+.track-timeline li small { display: block; color: var(--muted); margin-top: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Keep admin inventory, file inputs, checkout and tracking usable on phones/tablets. */
+html, body { max-width: 100%; overflow-x: hidden; }
+#app, #app .page, #app .cream-page, #app .content, #app .admin-wrap, #app .admin-panel { min-width: 0; max-width: 100%; }
+#app .admin-product-form { width: 100%; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+#app .admin-product-form .field { min-width: 0; }
+#app .admin-product-form input[type="file"] { display: block; width: 100%; max-width: 100%; min-width: 0; font-size: 14px; }
+#app .admin-image-preview { max-width: 100%; overflow-wrap: anywhere; }
+#app .admin-image-preview img { max-width: 76px; flex: 0 0 76px; }
+#app .admin-table-wrap { width: 100%; overflow-x: auto; }
+@media (max-width: 900px) {
+  #app .admin-product-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #app .detail-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #app .detail-buttons .full { grid-column: auto; }
+}
+@media (max-width: 600px) {
+  #app .admin-product-form { grid-template-columns: minmax(0, 1fr); }
+  #app .admin-panel { padding: 14px; }
+  #app .admin-product-form .btn { grid-column: auto; width: 100%; }
+  #app .admin-product-form input, #app .admin-product-form textarea, #app .admin-product-form select { width: 100%; min-width: 0; }
+  #app .track-search { border-radius: 18px; flex-direction: column; padding: 10px; }
+  #app .track-search input { padding: 12px; }
+  #app .track-search .btn { width: 100%; }
+  #app .checkout-contact-card, #app .track-order-card { padding: 16px; border-radius: 16px; }
+  #app .form-grid { grid-template-columns: minmax(0, 1fr); }
+  #app .field.full-field { grid-column: auto; }
+  #app .payment-option { padding: 13px; align-items: flex-start; }
+  #app .payment-option strong { font-size: 18px; }
 }

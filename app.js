@@ -172,13 +172,14 @@ const products = readStorage('gengaProducts', null) || [
   }
 
 ];
-localStorage.setItem('gengaProducts', JSON.stringify(products));
+if (!readStorage('gengaProducts', null)) localStorage.setItem('gengaProducts', JSON.stringify(products));
 
 /* -------------------- APP STATE -------------------- */
 
 const state = {
   page: 'home',
   previous: 'onhand',
+  navStack: [],
   selected: 1,
   quantity: 1,
   option: 'Ash',
@@ -190,7 +191,8 @@ const state = {
   faqOpen: 0,
   orders: [],
   pendingAddToCart: null,
-  pendingDestination: null
+  pendingDestination: null,
+  trackingQuery: ''
 };
 
 const app = document.querySelector('#app');
@@ -204,9 +206,9 @@ const PUBLIC_PAGES = [
 ];
 
 const PROTECTED_PAGES = [
-  'cart', 'checkout', 'favorites', 'profile', 'history'
+  'cart', 'checkout', 'favorites', 'profile', 'history', 'track'
 ];
-const ADMIN_PAGES = ['admin'];
+const ADMIN_PAGES = ['admin', 'inventory'];
 const ADMIN_EMAIL = 'admin@genga.ph';
 const ADMIN_PASSWORD = 'GengaAdmin2026!';
 
@@ -378,6 +380,13 @@ function go(page) {
     logoutDemo();
     return;
   }
+  // An administrator stays inside the admin interface; customer/store pages are hidden.
+  if (isAdmin() && !['admin', 'inventory'].includes(page)) {
+    state.page = 'admin';
+    closeDrawer();
+    render();
+    return;
+  }
 
   if (PROTECTED_PAGES.includes(page) && !isLoggedIn()) {
     state.pendingDestination = page;
@@ -392,27 +401,26 @@ function go(page) {
     state.previous = state.page;
   }
 
+  if (state.page !== page) state.navStack.push(state.page);
   state.page = page;
   closeDrawer();
   render();
 }
 
 function header(title, right = 'home') {
+  const adminMode = isAdmin();
   return `
-    <div class="page-header">
-      <button
-        class="icon-btn"
-        data-back
-        aria-label="Go back"
-      >‹</button>
-
-      <h2>${title}</h2>
-
-      <button
-        class="icon-btn"
-        data-page="${right}"
-        aria-label="${right === 'cart' ? 'Cart' : 'Home'}"
-      >${right === 'cart' ? '🛒' : '⌂'}</button>
+    <div class="page-header ${adminMode ? 'admin-page-header' : ''}">
+      <h2>${adminMode ? 'GENGA ADMIN' : title}</h2>
+      ${adminMode ? '' : `
+        <button
+          class="icon-btn"
+          data-page="${right}"
+          aria-label="${right === 'cart' ? 'Cart' : 'Back'}"
+          title="${right === 'cart' ? 'Cart' : 'Back'}"
+          ${right === 'cart' ? 'data-page="cart"' : 'data-back="true"'}
+        >${right === 'cart' ? '🛒' : '←'}</button>
+      `}
     </div>
   `;
 }
@@ -435,6 +443,8 @@ function shell(title, content, right = 'home') {
 
 function card(product) {
   const favorite = state.favorites.includes(product.id);
+  const stockManaged = product.stock !== undefined && product.stock !== null;
+  const stockOut = stockManaged && Number(product.stock) <= 0;
 
   return `
     <article class="product-card">
@@ -453,9 +463,10 @@ function card(product) {
       >${favorite ? '♥' : '♡'}</button>
 
       <div class="product-body">
-        <span class="pill">${product.badge}</span>
+        <span class="pill">${stockOut ? 'Out of Stock' : product.badge}</span>
 
         <h3 class="product-name">${product.name}</h3>
+        ${stockManaged ? `<p class="product-stock ${stockOut ? 'out' : ''}">${stockOut ? 'Currently unavailable' : `${Number(product.stock)} available`}</p>` : ''}
 
         <div class="price">${money(product.price)}</div>
 
@@ -467,8 +478,8 @@ function card(product) {
 
           <button
             class="btn light"
-            data-add="${product.id}"
-          >Add to cart</button>
+            data-add="${product.id}" ${stockOut ? 'disabled title="Out of stock"' : ''}
+          >${stockOut ? 'Out of stock' : 'Add to cart'}</button>
         </div>
       </div>
     </article>
@@ -480,9 +491,8 @@ function card(product) {
 function collection(type) {
   let list = products.filter(product =>
     product.type === type &&
-    product.name.toLowerCase().includes(
-      state.search.toLowerCase()
-    )
+    !(product.stock !== undefined && Number(product.stock) <= 0) &&
+    product.name.toLowerCase().includes(state.search.toLowerCase())
   );
 
   if (state.price === 'low') {
@@ -516,6 +526,7 @@ function collection(type) {
   return shell(
     onHand ? 'ON-HAND ITEMS' : 'PRE-ORDER',
     `
+      <button class="collection-back" type="button" data-back aria-label="Back to home">← Back to Home</button>
       <div class="section-head">
         <p class="eyebrow">
           ${onHand
@@ -644,10 +655,7 @@ function home() {
           </div>
 
           <div class="product-grid">
-            ${[
-              products[12],
-              products[13]
-            ].map(card).join('')}
+            ${products.filter(product => product.type === 'preorder' && !(product.stock !== undefined && Number(product.stock) <= 0)).slice(0, 2).map(product => `<article class="product-card featured-simple" data-product="${product.id}" role="button" tabindex="0"><img class="product-image" src="${asset(product.image)}" alt="${product.name}" loading="lazy"><div class="product-body"><span class="pill">PRE-ORDER</span><h3 class="product-name">${product.name}</h3></div></article>`).join('') || '<p class="empty">New pre-order items coming soon.</p>'}
           </div>
 
           <div class="hero-actions">
@@ -660,18 +668,6 @@ function home() {
           </div>
 
 
-          <div class="two-col" style="margin-top:50px">
-            <div class="feature-card">
-              <h3>COLLECT WITH CONFIDENCE</h3>
-              <p>Find collectibles and review your order history.</p>
-            </div>
-
-            <div class="feature-card">
-              <h3>NEED A HAND?</h3>
-              <p>Learn about payment, delivery, and packaging.</p>
-              <button class="btn" data-page="faq">READ FAQ</button>
-            </div>
-          </div>
         </div>
       </div>
     </section>
@@ -768,28 +764,18 @@ function productDetail(id) {
           <span class="pill">${product.badge}</span>
           <h1>${product.name}</h1>
           <div class="price">${money(product.price)}</div>
+          ${product.stock !== undefined ? `<p class="product-stock ${Number(product.stock) <= 0 ? 'out' : ''}">${Number(product.stock) <= 0 ? 'Out of stock' : `${Number(product.stock)} available`}</p>` : ''}
           <p class="intro">${product.desc}</p>
 
-          ${product.options ? `
-            <div class="field" style="margin:24px 0">
-              <label for="option">Choose option</label>
-              <select id="option">
-                ${product.options.map(option => `
-                  <option ${option === state.option ? 'selected' : ''}>
-                    ${option}
-                  </option>
-                `).join('')}
-              </select>
+          <div class="detail-choice-row">
+            <div class="field"><label for="option">Choose character / option</label>
+              <select id="option">${(product.options || ['Standard', 'Character A', 'Character B']).map(option => `<option ${option === state.option ? 'selected' : ''}>${option}</option>`).join('')}</select>
             </div>
-          ` : ''}
-
+            <div class="field"><label>Quantity</label>
+              <div class="qty"><button data-qty="-">−</button><strong id="qtyValue">${state.quantity}</strong><button data-qty="+">+</button></div>
+            </div>
+          </div>
           <div class="detail-buttons">
-            <div class="qty">
-              <button data-qty="-">−</button>
-              <strong id="qtyValue">${state.quantity}</strong>
-              <button data-qty="+">+</button>
-            </div>
-
             <button
               class="btn"
               data-add="${product.id}"
@@ -813,6 +799,14 @@ function productDetail(id) {
 function addToCart(id, qty = state.quantity, nextPage = 'cart') {
   const product = find(id);
   if (!product) return false;
+  if (product.stock !== undefined && product.stock !== null) {
+    const option = product.options ? state.option : '';
+    const existingQty = state.cart.filter(item => item.id === product.id && item.option === option).reduce((sum, item) => sum + Number(item.qty || 0), 0);
+    if (Number(product.stock) <= 0 || existingQty + Number(qty) > Number(product.stock)) {
+      notify(Number(product.stock) <= 0 ? 'This product is currently out of stock.' : `Only ${Number(product.stock) - existingQty} item(s) remain in stock.`);
+      return false;
+    }
+  }
 
   if (!isLoggedIn()) {
     state.pendingAddToCart = {
@@ -909,105 +903,64 @@ function cart() {
 
 function checkout() {
   if (!state.cart.length) {
-    return shell(
-      'CHECKOUT',
-      `
-        <div class="empty">
-          <h2>Your cart is empty.</h2>
-          <button class="btn" data-page="onhand">Browse items</button>
-        </div>
-      `
-    );
+    return shell('CHECKOUT', `<div class="empty"><h2>Your cart is empty.</h2><button class="btn" data-page="onhand">Browse items</button></div>`);
   }
 
-  const total = state.cart.reduce(
-    (sum, item) => sum + item.price * item.qty,
-    0
-  );
-
+  const total = state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const session = getCurrentUser();
+  const account = getUsers().find(u => u.email === session?.email) || {};
+  const addressReady = Boolean(account.phone && account.address);
 
-  return shell(
-    'CHECKOUT',
-    `
-      <div class="section-head">
-        <p class="eyebrow">YOUR ORDER</p>
-        <h1 class="section-title">CHECKOUT</h1>
-      </div>
-
-      <form id="checkoutForm">
+  return shell('CHECKOUT', `
+    <div class="section-head">
+      <p class="eyebrow">YOUR ORDER</p>
+      <h1 class="section-title">CHECKOUT</h1>
+    </div>
+    <form id="checkoutForm">
+      <section class="checkout-contact-card">
+        <h2>DELIVERY DETAILS</h2>
+        <p>Your saved contact details from registration are used automatically. To change them, visit <button type="button" class="inline-link" data-page="profile">My Profile</button>.</p>
         <div class="form-grid" style="margin:24px 0">
-          <div class="field full-field">
-            <label for="customerName">Full name</label>
-            <input
-              id="customerName"
-              required
-              name="name"
-              value="${session.name || ''}"
-              placeholder="Your full name"
-            >
-          </div>
-
-          <div class="field">
-            <label for="phone">Contact number</label>
-            <input
-              id="phone"
-              required
-              name="phone"
-              type="tel"
-              placeholder="09xx xxx xxxx"
-            >
-          </div>
-
-          <div class="field full-field">
-            <label for="address">Delivery address</label>
-            <textarea
-              id="address"
-              required
-              name="address"
-              rows="3"
-              placeholder="House no., street, barangay, city"
-            ></textarea>
-          </div>
+          <div class="field full-field"><label for="customerName">Full name</label><input id="customerName" name="name" value="${escapeHtml(account.name || session?.name || '')}" readonly required autocomplete="name"></div>
+          <div class="field full-field"><label for="phone">Contact number</label><input id="phone" name="phone" type="tel" value="${escapeHtml(account.phone || '')}" readonly required autocomplete="tel" placeholder="Add your number in My Profile"></div>
+          <div class="field full-field"><label for="address">Delivery address</label><textarea id="address" name="address" rows="3" readonly required autocomplete="street-address" placeholder="Add your address in My Profile">${escapeHtml(account.address || '')}</textarea></div>
         </div>
+        ${addressReady ? '' : '<p class="checkout-warning">Please add your contact number and delivery address in My Profile before placing your order.</p>'}
+      </section>
+      <h2 class="payment-heading">PAYMENT METHOD</h2>
+      <label class="payment-option"><input type="radio" name="payment" value="GCash" required><span><strong>GCash</strong><small>Full payment via GCash</small></span></label>
+      <label class="payment-option"><input type="radio" name="payment" value="Bank Transfer"><span><strong>Bank Transfer</strong><small>Full payment via bank transfer</small></span></label>
+      <label class="payment-option"><input type="radio" name="payment" value="50% Online + 50% COD"><span><strong>50% Online Payment + 50% Cash on Delivery</strong><small>Pay half online now and the remaining half upon delivery.</small></span></label>
+      <div class="subtotal"><span>TOTAL</span><strong>${money(total)}</strong></div>
+      <div class="payment-split" id="paymentSplit" hidden><p>Pay online now (50%) <strong>${money(Math.ceil(total*100/2)/100)}</strong></p><p>Pay upon delivery / COD (50%) <strong>${money(Math.floor(total*100/2)/100)}</strong></p></div>
+      <button class="btn full" type="submit" ${addressReady ? '' : 'disabled'}>PLACE ORDER</button>
+    </form>
+  `);
+}
 
-        <h2 style="font:28px var(--display);color:var(--teal)">
-          PAYMENT METHOD
-        </h2>
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+}
 
-        <label class="payment-option">
-          <input type="radio" name="payment" value="GCash" required>
-          <span>
-            <strong>GCash</strong>
-            <small>Full payment via GCash</small>
-          </span>
-        </label>
-
-        <label class="payment-option">
-          <input type="radio" name="payment" value="Bank Transfer">
-          <span>
-            <strong>Bank Transfer</strong>
-            <small>Full payment via bank transfer</small>
-          </span>
-        </label>
-
-        <label class="payment-option">
-          <input type="radio" name="payment" value="Cash on Delivery">
-          <span>
-            <strong>Cash on Delivery</strong>
-            <small>Pay when your order arrives</small>
-          </span>
-        </label>
-
-        <div class="subtotal">
-          <span>TOTAL</span>
-          <strong>${money(total)}</strong>
-        </div>
-
-        <button class="btn full" type="submit">PLACE ORDER</button>
-      </form>
-    `
-  );
+/* -------------------- TRACK ORDER -------------------- */
+function trackOrder() {
+  const query = String(state.trackingQuery || '').trim().toUpperCase();
+  const order = query ? state.orders.find(item => String(item.id).toUpperCase() === query) : null;
+  const recentOrders = state.orders.slice(0, 5);
+  const orderCard = item => `
+    <article class="track-order-card">
+      <div class="track-order-top"><div><p class="eyebrow">ORDER ${escapeHtml(item.id)}</p><h2>${escapeHtml(item.status || 'Pending approval')}</h2></div><span class="track-order-date">${escapeHtml(item.date || '')}</span></div>
+      <p>${escapeHtml(item.name || '')}</p>
+      <p><strong>Total:</strong> ${money(item.price)} &nbsp; <strong>Payment:</strong> ${escapeHtml(item.payment || '—')}</p>
+      <ol class="track-timeline">${(item.tracking || [{status:item.status || 'Pending approval', date:item.date || ''}]).map((step, index) => `<li class="${index === (item.tracking || []).length - 1 ? 'current' : 'done'}"><span class="track-dot">${index < (item.tracking || []).length - 1 ? '✓' : '•'}</span><div><strong>${escapeHtml(step.status)}</strong><small>${escapeHtml(step.date || '')}</small></div></li>`).join('')}</ol>
+    </article>`;
+  return shell('TRACK ORDER', `
+    <div class="section-head"><p class="eyebrow">WHERE IS MY ORDER?</p><h1 class="section-title">TRACK ORDER</h1><p class="intro">Enter an order number from your order confirmation to view its latest status.</p></div>
+    <form id="trackOrderForm" class="track-search"><label class="sr-only" for="trackingNumber">Order number</label><input id="trackingNumber" name="trackingNumber" value="${escapeHtml(state.trackingQuery)}" placeholder="e.g. GENGA-296327" autocomplete="off" required><button class="btn" type="submit">TRACK</button></form>
+    ${query ? (order ? orderCard(order) : '<div class="empty track-order-card"><h2>Order not found</h2><p>Check the order number. You can only track orders linked to your signed-in account.</p></div>') : ''}
+    ${!query && recentOrders.length ? `<h2 class="track-recent-heading">YOUR RECENT ORDERS</h2>${recentOrders.map(orderCard).join('')}` : ''}
+    ${!recentOrders.length && !query ? '<div class="empty"><h2>No orders to track yet.</h2><p>After checkout, your order number and status will appear here.</p><button class="btn" data-page="onhand">START SHOPPING</button></div>' : ''}
+  `, 'home');
 }
 
 /* -------------------- FAVORITES -------------------- */
@@ -1045,31 +998,18 @@ function favorites() {
 
 function profile() {
   const session = getCurrentUser();
-
-  return shell(
-    'PROFILE',
-    `
-      <div class="section-head">
-        <p class="eyebrow">YOUR ACCOUNT</p>
-        <h1 class="section-title">MY PROFILE</h1>
-      </div>
-
-      <div class="feature-card">
-        <div class="field">
-          <label>Full name</label>
-          <p>${session ? session.name : ''}</p>
-        </div>
-
-        <div class="field">
-          <label>Email address</label>
-          <p>${session ? session.email : ''}</p>
-        </div>
-
-        <button class="btn" data-page="history">VIEW ORDER HISTORY</button>
-      </div>
-    `,
-    'home'
-  );
+  const user = session ? getUsers().find(u => u.email === session.email) : null;
+  return shell('PROFILE', `
+    <div class="section-head"><p class="eyebrow">YOUR ACCOUNT</p><h1 class="section-title">MY PROFILE</h1></div>
+    <form id="profileForm" class="feature-card form-grid">
+      <div class="field full-field"><label for="profileName">Full name</label><input id="profileName" name="name" required value="${user?.name || session?.name || ''}"></div>
+      <div class="field full-field"><label>Email address</label><input value="${user?.email || session?.email || ''}" disabled></div>
+      <div class="field full-field"><label for="profilePhone">Contact number</label><input id="profilePhone" name="phone" type="tel" value="${user?.phone || ''}" placeholder="09xx xxx xxxx" required></div>
+      <div class="field full-field"><label for="profileAddress">Delivery address</label><textarea id="profileAddress" name="address" rows="3" required placeholder="House no., street, barangay, city">${user?.address || ''}</textarea></div>
+      <button class="btn full" type="submit">SAVE PROFILE</button>
+      <button class="btn light full" type="button" data-page="logout">LOG OUT</button>
+    </form>
+  `, 'cart');
 }
 
 /* -------------------- TRANSACTION HISTORY -------------------- */
@@ -1092,6 +1032,9 @@ function history() {
               <p>${order.name}</p>
               <p>Total: <strong>${money(order.price)}</strong></p>
               <p>Status: <strong>${order.status}</strong></p>
+              <p>Payment: <strong>${order.payment || '—'}</strong></p>
+              ${order.payment === '50% Online + 50% COD' ? `<p>Online payment: <strong>${money(order.onlineDue ?? order.price/2)}</strong> · COD: <strong>${money(order.codDue ?? order.price/2)}</strong></p>` : ''}
+              <div class="tracking-steps"><strong>TRACK ORDER</strong><p>${(order.tracking || [{status: order.status, date: order.date}]).map(step => `${step.status} — ${step.date}`).join('<br>')}</p></div>
             </article>
           `).join('')}
         </div>
@@ -1219,6 +1162,7 @@ function login() {
               required
               placeholder="Enter your password"
             >
+            <button class="password-toggle" type="button" data-toggle-password="loginPassword" aria-label="Show password" title="Show password">&#128065;</button>
           </div>
 
           <p id="loginError" class="form-error" style="display:none"></p>
@@ -1283,6 +1227,14 @@ function register() {
           </div>
 
           <div class="field">
+            <label for="registerPhone">Contact number</label>
+            <input id="registerPhone" name="phone" type="tel" required placeholder="09xx xxx xxxx" autocomplete="tel">
+          </div>
+          <div class="field full-field">
+            <label for="registerAddress">Delivery address</label>
+            <textarea id="registerAddress" name="address" rows="3" required placeholder="House no., street, barangay, city" autocomplete="street-address"></textarea>
+          </div>
+          <div class="field">
             <label for="registerPassword">Password</label>
             <input
               id="registerPassword"
@@ -1293,6 +1245,7 @@ function register() {
               required
               placeholder="At least 8 characters"
             >
+            <button class="password-toggle" type="button" data-toggle-password="registerPassword" aria-label="Show password" title="Show password">&#128065;</button>
           </div>
 
           <div class="field">
@@ -1306,6 +1259,7 @@ function register() {
               required
               placeholder="Enter your password again"
             >
+            <button class="password-toggle" type="button" data-toggle-password="confirmPassword" aria-label="Show password" title="Show password">&#128065;</button>
           </div>
 
           <p id="registerError" class="form-error" style="display:none"></p>
@@ -1339,25 +1293,37 @@ function adminDashboard() {
         <div class="admin-stat"><small>TOTAL ORDERS</small><strong>${orders.length}</strong></div>
         <div class="admin-stat"><small>PENDING ORDERS</small><strong>${orders.filter(o=>['Pending approval','Processing'].includes(o.status)).length}</strong></div>
       </div>
-      <section class="admin-panel">
-        <h2>INVENTORY MANAGEMENT</h2>
-        <form id="adminProductForm" class="admin-product-form">
-          <div class="field"><label>Product name</label><input name="name" required placeholder="Product name"></div>
-          <div class="field"><label>Price (₱)</label><input name="price" type="number" min="0" step="1" required value="0"></div>
-          <div class="field"><label>Image filename</label><input name="image" required placeholder="image-file.jpg"></div>
-          <div class="field"><label>Product type</label><select name="type"><option value="onhand">On-hand</option><option value="preorder">Pre-order</option></select></div>
-          <div class="field"><label>Stock quantity</label><input name="stock" type="number" min="0" value="0" required></div>
-          <div class="field"><label>Description</label><input name="desc" placeholder="Short description"></div>
-          <button class="btn full" type="submit">ADD PRODUCT</button>
-        </form>
-        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>
-        ${products.map(p=>`<tr><td>${p.name}</td><td>${p.type==='onhand'?'On-hand':'Pre-order'}</td><td>${money(p.price)}</td><td>${Number(p.stock||0)}</td><td><button class="btn admin-small" data-stock-edit="${p.id}">Edit stock</button> <button class="btn light admin-small" data-product-delete="${p.id}">Delete</button></td></tr>`).join('')}
-        </tbody></table></div><p class="muted">Image filename must match a file in your assets folder. Stock is recorded for inventory display; checkout stock enforcement is not included yet.</p>
-      </section>
+
       <section class="admin-panel"><h2>ORDER APPROVAL & STATUS</h2>
       ${orders.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Update</th></tr></thead><tbody>
       ${orders.map(o=>`<tr><td data-label="Order">${o.id}<br><small>${o.date}</small></td><td data-label="Customer">${o.customerName||'Customer'}<br><small>${o.customer||''}</small></td><td data-label="Items">${o.name}</td><td data-label="Total">${money(o.price)}</td><td data-label="Payment">${o.payment||'—'}</td><td data-label="Status">${o.status}</td><td data-label="Update"><label class="admin-status-label">Change status</label><select data-order-status="${o.id}">${['Pending approval','Confirmed','Processing','Shipped','Delivered','Cancelled'].map(st=>`<option value="${st}" ${o.status===st?'selected':''}>${st}</option>`).join('')}</select></td></tr>`).join('')}
       </tbody></table></div>` : '<p class="empty">No orders yet. New orders will appear here.</p>'}</section>
+      <button class="btn full" data-page="inventory">OPEN INVENTORY MANAGEMENT</button>
+
+    </div>`, 'home');
+}
+
+function adminInventory() {
+  if (!isAdmin()) return shell('ADMIN ACCESS', '<div class="empty"><h2>Admin access only.</h2></div>');
+  return shell('INVENTORY MANAGEMENT', `
+    <div class="admin-wrap"><div id="stockEditorHost"></div>
+      <button class="inventory-back" type="button" data-page="admin" aria-label="Back to admin dashboard">← Back to Admin Dashboard</button>
+      <div class="section-head"><p class="eyebrow">PRODUCT CATALOG</p><h1 class="section-title">INVENTORY MANAGEMENT</h1><p class="intro">Add products, upload real images, edit prices and stock. Set stock to zero to hide a product from customers.</p></div>
+      <section class="admin-panel">
+        <h2>INVENTORY MANAGEMENT</h2>
+        <form id="adminProductForm" class="admin-product-form">
+          <div class="field"><label for="newProductName">Product name</label><input id="newProductName" name="name" required placeholder="e.g. One Piece Ace Figure"></div>
+          <div class="field"><label for="newProductPrice">Price (₱)</label><input id="newProductPrice" name="price" type="number" min="0.01" step="0.01" required placeholder="Enter price, e.g. 350.00" inputmode="decimal"><small class="field-hint">Enter the selling price in Philippine pesos.</small></div>
+          <div class="field"><label for="newProductImage">Product image</label><input id="newProductImage" name="imageFile" type="file" accept="image/*" required><small class="field-hint">Choose a photo saved on your device. Google Photos images must first be downloaded to your device.</small><div id="newProductImagePreview" class="admin-image-preview" hidden><img alt="Selected product preview"><span>Image preview</span></div></div>
+          <div class="field"><label for="newProductType">Product type</label><select id="newProductType" name="type"><option value="onhand">On-hand</option><option value="preorder">Pre-order</option></select></div>
+          <div class="field"><label for="newProductStock">Available stock</label><input id="newProductStock" name="stock" type="number" min="0" step="1" required placeholder="Enter quantity, e.g. 10" inputmode="numeric"><small class="field-hint">Use 0 to mark as out of stock (hidden from customers).</small></div>
+          <div class="field"><label for="newProductDesc">Product description</label><input id="newProductDesc" name="desc" placeholder="Short description of the item"></div>
+          <button class="btn full" type="submit">ADD PRODUCT</button>
+        </form>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>
+        ${products.map(p=>`<tr><td>${p.name}</td><td>${p.type==='onhand'?'On-hand':'Pre-order'}</td><td>${money(p.price)}</td><td>${p.stock === undefined ? 'Not set' : Number(p.stock)}</td><td><button class="btn admin-small" data-stock-edit="${p.id}">Edit stock &amp; price</button> <button class="btn light admin-small" data-product-delete="${p.id}">Delete</button></td></tr>`).join('')}
+        </tbody></table></div><p class="muted">Price and stock changes are reflected in the storefront on this browser. Products with managed stock set to 0 are hidden from customers and cannot be added to cart.</p>
+      </section>
     </div>`, 'home');
 }
 
@@ -1386,13 +1352,15 @@ function logoutDemo() {
 /* -------------------- RENDER PAGES -------------------- */
 
 function render() {
+  // Keep an authenticated admin out of the customer storefront.
+  if (isAdmin() && !['admin', 'inventory'].includes(state.page)) state.page = 'admin';
   if (ADMIN_PAGES.includes(state.page) && !isAdmin()) state.page = 'login';
   if (PROTECTED_PAGES.includes(state.page) && !isLoggedIn()) {
     state.page = 'login';
   }
 
   if (['login', 'register'].includes(state.page) && isLoggedIn()) {
-    state.page = 'home';
+    state.page = isAdmin() ? 'admin' : 'home';
   }
 
   const pages = {
@@ -1406,46 +1374,73 @@ function render() {
     favorites,
     profile,
     history,
+    track: trackOrder,
     faq,
     about,
     login,
     register,
-    admin: adminDashboard
+    admin: adminDashboard,
+    inventory: adminInventory
   };
 
+  const adminMode = isAdmin();
+  document.body.classList.toggle('admin-mode', adminMode);
   app.innerHTML = (pages[state.page] || home)();
+
   const nav = document.querySelector('#drawer nav');
-  if (nav && isAdmin() && !document.querySelector('#adminNavButton')) {
-    const b = document.createElement('button');
-    b.id = 'adminNavButton'; b.dataset.page = 'admin'; b.textContent = 'ADMIN DASHBOARD →';
-    nav.appendChild(b);
+  if (nav && adminMode) {
+    nav.innerHTML = `
+      <button data-page="admin" class="admin-nav-active">ORDER APPROVAL & STATUS</button>
+      <button data-page="inventory">INVENTORY MANAGEMENT</button>
+      <button data-page="logout">LOG OUT</button>
+    `;
+  } else if (nav && !adminMode) {
+    // Restore the normal customer navigation after the admin logs out.
+    nav.innerHTML = `
+      <button data-page="home" data-auth-only>HOME</button>
+      <button data-page="onhand" data-auth-only>ON-HAND ITEMS</button>
+      <button data-page="preorder" data-auth-only>PRE-ORDER ITEMS</button>
+      <button data-page="favorites" data-auth-only>FAVORITES ♡</button>
+      <button data-page="cart" data-auth-only>YOUR CART</button>
+      <button data-page="history" data-auth-only>TRANSACTION HISTORY</button>
+      <button data-page="track" data-auth-only>TRACK ORDER</button>
+      <button class="nav-divider" data-page="about" data-auth-only>ABOUT US</button>
+      <button data-page="faq" data-auth-only>FAQ</button>
+      <button class="nav-divider" data-page="profile" data-auth-only>MY PROFILE</button>
+      <button data-page="login" data-guest-only>LOGIN</button>
+      <button data-page="register" data-guest-only>CREATE ACCOUNT</button>
+      <button data-page="logout" data-auth-only>LOG OUT</button>
+    `;
   }
-  if (!isAdmin()) document.querySelector('#adminNavButton')?.remove();
 
-  document.querySelectorAll('#drawer [data-page]').forEach(button => {
-    const page = button.dataset.page;
-    const loggedIn = isLoggedIn();
+  const footer = document.querySelector('.footer');
+  if (footer) footer.hidden = adminMode;
 
-    const alwaysVisible = [
-      'home', 'onhand', 'preorder', 'about', 'faq'
-    ];
-
-    const authPages = ['login', 'register'];
-
-    const protectedPages = [
-      'cart', 'favorites', 'history', 'profile', 'checkout'
-    ];
-
-    if (alwaysVisible.includes(page)) {
-      button.hidden = false;
-    } else if (authPages.includes(page)) {
-      button.hidden = loggedIn;
-    } else if (page === 'logout') {
-      button.hidden = !loggedIn;
-    } else if (protectedPages.includes(page)) {
-      button.hidden = !loggedIn;
+  const topProfile = document.querySelector('.profile-shortcut');
+  if (topProfile) {
+    if (adminMode) {
+      topProfile.dataset.page = 'logout';
+      topProfile.setAttribute('aria-label', 'Log out');
+      topProfile.title = 'Log out';
+      topProfile.textContent = '⇥';
+    } else {
+      topProfile.dataset.page = 'profile';
+      topProfile.setAttribute('aria-label', 'My account');
+      topProfile.title = 'My account';
+      topProfile.textContent = '♙';
     }
-  });
+  }
+
+  const brand = document.querySelector('.brand-mini');
+  if (brand) {
+    if (adminMode) {
+      brand.removeAttribute('data-page');
+      brand.setAttribute('aria-label', 'GENGA Admin');
+    } else {
+      brand.dataset.page = 'home';
+      brand.setAttribute('aria-label', 'GENGA Home');
+    }
+  }
 
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
@@ -1475,6 +1470,12 @@ if (drawer && scrim) {
 /* -------------------- CLICK EVENTS -------------------- */
 
 document.addEventListener('click', event => {
+  const eye = event.target.closest('[data-toggle-password]');
+  if (eye) {
+    const input = document.getElementById(eye.dataset.togglePassword);
+    if (input) { input.type = input.type === 'password' ? 'text' : 'password'; eye.innerHTML = input.type === 'password' ? '&#128065;' : '&#128584;'; }
+    return;
+  }
   const target = event.target.closest(
     'button, [data-product], a[data-page]'
   );
@@ -1490,14 +1491,10 @@ document.addEventListener('click', event => {
 
   /* Back button */
   if (target.hasAttribute('data-back')) {
-    if (state.page === 'product') {
-      go(state.previous);
-    } else if (state.page === 'checkout') {
-      go('cart');
-    } else {
-      go('home');
-    }
-
+    const fallback = state.page === 'checkout' ? 'cart' : (state.page === 'product' ? state.previous : 'home');
+    const previousPage = state.navStack.pop();
+    state.page = previousPage && previousPage !== state.page ? previousPage : fallback;
+    closeDrawer(); render();
     return;
   }
 
@@ -1699,6 +1696,13 @@ document.addEventListener('click', event => {
 
 
 
+document.addEventListener('change', event => {
+  if (event.target.name === 'payment') {
+    const split = document.querySelector('#paymentSplit');
+    if (split) split.hidden = event.target.value !== '50% Online + 50% COD';
+  }
+});
+
 /* -------------------- FILTERS -------------------- */
 
 document.addEventListener('change', event => {
@@ -1793,6 +1797,8 @@ document.addEventListener('submit', event => {
     name,
     email,
     password,
+    phone: String(data.get('phone') || '').trim(),
+    address: String(data.get('address') || '').trim(),
     role: 'customer'
   });
 
@@ -1880,6 +1886,23 @@ document.addEventListener('submit', event => {
   notify('Welcome to GENGA, ' + user.name + '!');
 });
 
+/* -------------------- PROFILE SAVE -------------------- */
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'profileForm') return;
+  event.preventDefault();
+  const session = getCurrentUser();
+  const users = getUsers();
+  const user = users.find(u => u.email === session?.email);
+  if (!user) return notify('Please log in again.');
+  const data = new FormData(event.target);
+  user.name = String(data.get('name') || '').trim();
+  user.phone = String(data.get('phone') || '').trim();
+  user.address = String(data.get('address') || '').trim();
+  localStorage.setItem('gengaDemoUsers', JSON.stringify(users));
+  localStorage.setItem('gengaDemoSession', JSON.stringify({...session, name:user.name}));
+  render(); notify('Profile details saved.');
+});
+
 /* -------------------- CHECKOUT SUBMISSION -------------------- */
 
 document.addEventListener('submit', event => {
@@ -1908,6 +1931,20 @@ document.addEventListener('submit', event => {
 
   const session = getCurrentUser();
 
+  const account = getUsers().find(user => user.email === session.email);
+  if (!account || !String(account.phone || '').trim() || !String(account.address || '').trim()) {
+    notify('Please add your contact number and address in My Profile first.');
+    go('profile');
+    return;
+  }
+  if (account) {
+    account.name = String(data.get('name') || account.name);
+    // Checkout uses the saved profile details; customers edit these in My Profile.
+    account.phone = String(account.phone || '');
+    account.address = String(account.address || '');
+    localStorage.setItem('gengaDemoUsers', JSON.stringify(getUsers()));
+    localStorage.setItem('gengaDemoSession', JSON.stringify({...session, name: account.name}));
+  }
   state.orders.unshift({
     id: 'GENGA-' + String(Date.now()).slice(-6),
 
@@ -1924,10 +1961,13 @@ document.addEventListener('submit', event => {
     price: total,
     status: 'Pending approval',
     customer: session.email,
-    customerName: data.get('name'),
-    phone: data.get('phone'),
-    address: data.get('address'),
-    payment: data.get('payment')
+    customerName: account?.name || session.name || '',
+    phone: account?.phone || '',
+    address: account?.address || '',
+    payment: data.get('payment'),
+    onlineDue: data.get('payment') === '50% Online + 50% COD' ? Math.ceil(total * 100 / 2) / 100 : total,
+    codDue: data.get('payment') === '50% Online + 50% COD' ? Math.floor(total * 100 / 2) / 100 : 0,
+    tracking: [{ status: 'Pending approval', date: new Date().toLocaleString('en-PH') }]
   });
 
   const createdOrder = state.orders[0];
@@ -1946,42 +1986,111 @@ document.addEventListener('submit', event => {
 });
 
 
+/* -------------------- TRACK ORDER SEARCH -------------------- */
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'trackOrderForm') return;
+  event.preventDefault();
+  state.trackingQuery = String(new FormData(event.target).get('trackingNumber') || '').trim().toUpperCase();
+  render();
+});
+
 /* -------------------- ADMIN ACTIONS -------------------- */
 document.addEventListener('submit', event => {
   if (event.target.id !== 'adminProductForm') return;
   event.preventDefault();
   if (!isAdmin()) return notify('Admin access only.');
-  const d = new FormData(event.target);
-  const name = String(d.get('name')||'').trim();
-  const image = String(d.get('image')||'').trim();
+  const form = event.target;
+  const d = new FormData(form);
+  const name = String(d.get('name') || '').trim();
+  const file = d.get('imageFile');
   const price = Number(d.get('price'));
-  if (!name || !image || !Number.isFinite(price) || price < 0) return notify('Enter valid product details.');
-  const type = d.get('type') === 'preorder' ? 'preorder' : 'onhand';
-  products.push({id:Math.max(0,...products.map(p=>Number(p.id)||0))+1,name,image,price,type,stock:Math.max(0,Number(d.get('stock'))||0),badge:type==='preorder'?'Pre-Order':'On Hand',desc:String(d.get('desc')||'').trim()||name});
-  saveProducts(); render(); notify('Product added to inventory.');
+  const stockRaw = String(d.get('stock') ?? '').trim();
+  const stock = Number(stockRaw);
+  if (!name) return notify('Enter a product name.');
+  if (!file || !file.size || !file.type.startsWith('image/')) return notify('Choose a valid product image from your device.');
+  if (!Number.isFinite(price) || price <= 0) return notify('Enter a price greater than ₱0.');
+  if (stockRaw === '' || !Number.isInteger(stock) || stock < 0) return notify('Enter a whole-number stock quantity (0 or more).');
+  if (file.size > 2 * 1024 * 1024) return notify('Please choose an image smaller than 2 MB.');
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const type = d.get('type') === 'preorder' ? 'preorder' : 'onhand';
+      products.push({
+        id: Math.max(0, ...products.map(p => Number(p.id) || 0)) + 1,
+        name,
+        image: String(reader.result),
+        price: Math.round(price * 100) / 100,
+        type,
+        stock,
+        badge: type === 'preorder' ? 'Pre-Order' : 'On Hand',
+        desc: String(d.get('desc') || '').trim() || name
+      });
+      saveProducts();
+      render();
+      notify('Product added with image, price, and stock.');
+    } catch (error) {
+      notify('Could not save this image. Try a smaller image file.');
+    }
+  };
+  reader.onerror = () => notify('Could not read this image. Please choose another file.');
+  reader.readAsDataURL(file);
 });
+
 document.addEventListener('submit', event => {
   if (event.target.id !== 'stockEditForm') return;
   event.preventDefault();
   if (!isAdmin()) return notify('Admin access only.');
+
   const form = event.target;
   const product = find(form.dataset.stockProduct);
-  const value = Number(new FormData(form).get('stock'));
-  if (!product || !Number.isInteger(value) || value < 0) return notify('Enter a valid non-negative whole number.');
-  product.stock = value;
+  const data = new FormData(form);
+  const stock = Number(data.get('stock'));
+  const price = Number(data.get('price'));
+
+  if (!product) return notify('Product could not be found. Please refresh and try again.');
+  if (!Number.isInteger(stock) || stock < 0) {
+    return notify('Enter a valid non-negative whole number for stock.');
+  }
+  if (!Number.isFinite(price) || price < 0) {
+    return notify('Enter a valid price of zero or more.');
+  }
+
+  product.stock = stock;
+  product.price = Math.round(price * 100) / 100;
   saveProducts();
   render();
-  notify('Stock quantity updated.');
+  notify('Stock and price updated successfully.');
 });
 
 document.addEventListener('click', event => {
-  if (event.target.closest('[data-stock-modal-close], [data-admin-modal-close]')) {
+  // Close only when the backdrop itself or an explicit close/cancel button is clicked.
+  // Do not match the backdrop through closest(): every input inside the modal is
+  // a descendant of it, which caused the editor to close when tapping the Price field.
+  const target = event.target;
+  const clickedBackdrop = target.classList &&
+    target.classList.contains('admin-modal-backdrop') &&
+    (target.hasAttribute('data-stock-modal-close') || target.hasAttribute('data-admin-modal-close'));
+  const clickedCloseButton = target.closest &&
+    target.closest('button[data-stock-modal-close], button[data-admin-modal-close]');
+
+  if (clickedBackdrop || clickedCloseButton) {
     const host = document.querySelector('#stockEditorHost');
     if (host) host.innerHTML = '';
   }
 });
 
 document.addEventListener('change', event => {
+  if (event.target.id === 'newProductImage') {
+    const file = event.target.files && event.target.files[0];
+    const preview = document.querySelector('#newProductImagePreview');
+    if (preview && file && file.type.startsWith('image/')) {
+      const img = preview.querySelector('img');
+      img.src = URL.createObjectURL(file);
+      preview.hidden = false;
+    } else if (preview) {
+      preview.hidden = true;
+    }
+  }
   const sel = event.target.closest('[data-order-status]');
   if (!sel) return;
   if (!isAdmin()) return notify('Admin access only.');
@@ -1995,6 +2104,8 @@ document.addEventListener('change', event => {
   }
 
   order.status = sel.value;
+  order.tracking = order.tracking || [];
+  order.tracking.push({ status: order.status, date: new Date().toLocaleString('en-PH') });
   saveAllOrders(orders);
 
   // Update every matching customer history stored on this same browser origin.
@@ -2026,14 +2137,22 @@ document.addEventListener('click', event => {
         <section class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="stockModalTitle">
           <button type="button" class="admin-modal-close" data-stock-modal-close aria-label="Close">×</button>
           <p class="eyebrow">INVENTORY UPDATE</p>
-          <h2 id="stockModalTitle">Edit stock quantity</h2>
+          <h2 id="stockModalTitle">Edit stock &amp; price</h2>
           <p class="admin-modal-product">${p.name}</p>
           <form id="stockEditForm" data-stock-product="${p.id}">
-            <label for="stockQuantityInput">Available stock</label>
-            <input id="stockQuantityInput" name="stock" type="number" min="0" step="1" value="${Number(p.stock||0)}" required>
+            <div class="field">
+              <label for="stockQuantityInput">Available stock</label>
+              <input id="stockQuantityInput" name="stock" type="number" min="0" step="1" value="${p.stock === undefined ? '' : Number(p.stock)}" placeholder="Enter available units, e.g. 10" inputmode="numeric" required>
+              <small class="field-hint">Set to 0 to hide this product from the customer storefront.</small>
+            </div>
+            <div class="field">
+              <label for="stockPriceInput">Product price (₱)</label>
+              <input id="stockPriceInput" name="price" type="number" min="0" step="0.01" inputmode="decimal" value="${Number(p.price||0)}" placeholder="Enter price in PHP, e.g. 350.00" required>
+              <small class="field-hint">Displayed to customers as the product price.</small>
+            </div>
             <div class="admin-modal-actions">
               <button type="button" class="btn light" data-stock-modal-close>Cancel</button>
-              <button type="submit" class="btn">SAVE STOCK</button>
+              <button type="submit" class="btn">SAVE CHANGES</button>
             </div>
           </form>
         </section>
