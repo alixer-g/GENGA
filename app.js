@@ -202,13 +202,13 @@ const toastEl = document.querySelector('#toast');
 
 const PUBLIC_PAGES = [
   'home', 'onhand', 'preorder', 'product', 'about', 'faq',
-  'login', 'register'
+  'reviews', 'login', 'register'
 ];
 
 const PROTECTED_PAGES = [
   'cart', 'checkout', 'favorites', 'profile', 'history', 'track'
 ];
-const ADMIN_PAGES = ['admin', 'inventory'];
+const ADMIN_PAGES = ['admin', 'inventory', 'adminReviews'];
 const ADMIN_EMAIL = 'admin@genga.ph';
 const ADMIN_PASSWORD = 'GengaAdmin2026!';
 
@@ -279,6 +279,94 @@ function getUsers() {
 
 function getCurrentUser() {
   return readStorage('gengaDemoSession', null);
+}
+
+function getShopReviews() {
+  const reviews = readStorage('gengaShopReviews', []);
+  return Array.isArray(reviews) ? reviews.filter(review =>
+    review && typeof review === 'object' &&
+    typeof review.email === 'string' &&
+    Number.isInteger(Number(review.rating)) && Number(review.rating) >= 1 && Number(review.rating) <= 5 &&
+    typeof review.comment === 'string'
+  ) : [];
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  })[character]);
+}
+
+function reviewSummaryMarkup(reviews) {
+  const average = reviews.length
+    ? reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length
+    : 0;
+  return `
+    <section class="review-summary" aria-label="Shop rating summary">
+      <strong>${average ? average.toFixed(1) : '—'}</strong>
+      <div><span class="review-stars" aria-label="${average.toFixed(1)} out of 5 stars">${average ? '★'.repeat(Math.round(average)) + '☆'.repeat(5 - Math.round(average)) : '☆☆☆☆☆'}</span>
+      <p>${reviews.length} ${reviews.length === 1 ? 'review' : 'reviews'}</p></div>
+    </section>`;
+}
+
+function reviewCardsMarkup(reviews, emptyMessage) {
+  return reviews.length ? reviews.map(review => `
+    <article class="review-card">
+      <div class="review-card-head"><strong>${escapeHTML(review.name || 'Customer')}</strong><time datetime="${escapeHTML(review.timestamp || '')}">${escapeHTML(review.date || '')}</time></div>
+      <div class="review-stars" aria-label="${Number(review.rating)} out of 5 stars">${'★'.repeat(Number(review.rating))}${'☆'.repeat(5 - Number(review.rating))}</div>
+      <p>${escapeHTML(review.comment)}</p>
+    </article>`).join('') : `<p class="empty">${emptyMessage}</p>`;
+}
+
+function reviewsPage() {
+  const reviews = getShopReviews().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const session = getCurrentUser();
+  const account = session && getUsers().find(user => user.email === session.email);
+  const alreadyReviewed = Boolean(account && reviews.some(review => review.email === account.email));
+
+  return shell('SHOP REVIEWS', `
+    <div class="section-head">
+      <p class="eyebrow">FROM OUR COLLECTOR COMMUNITY</p>
+      <h1 class="section-title">SHOP REVIEWS</h1>
+      <p class="intro">See what GENGA customers have to say about their shopping experience.</p>
+    </div>
+    ${reviewSummaryMarkup(reviews)}
+    <section class="review-form-panel" aria-labelledby="reviewFormTitle">
+      <h2 id="reviewFormTitle">Share your experience</h2>
+      ${alreadyReviewed
+        ? '<p class="review-note">You have already submitted a shop review with this account.</p>'
+        : account && !isAdmin() ? `
+          <form id="shopReviewForm" class="review-form">
+            <fieldset class="review-rating-field">
+              <legend>Your rating</legend>
+              <div class="review-rating-options" role="radiogroup" aria-label="Rating from 1 to 5 stars">
+                ${[5, 4, 3, 2, 1].map(rating => `<label><input type="radio" name="rating" value="${rating}" required><span class="review-star" aria-hidden="true">☆</span><span class="sr-only">${rating} ${rating === 1 ? 'star' : 'stars'}</span></label>`).join('')}
+              </div>
+            </fieldset>
+            <div class="field"><label for="reviewComment">Your review</label><textarea id="reviewComment" name="comment" rows="4" maxlength="1000" required placeholder="Tell us about your experience (up to 1,000 characters)"></textarea></div>
+            <button class="btn" type="submit">SUBMIT REVIEW</button>
+          </form>`
+        : '<p class="review-note">Please <button class="inline-link" type="button" data-page="login">log in</button> with your customer account to submit a review.</p>'}
+    </section>
+    <section class="review-list" aria-label="Customer reviews">
+      ${reviewCardsMarkup(reviews, 'No customer reviews yet. Be the first to share your experience.')}
+    </section>
+  `, 'home');
+}
+
+function adminReviewsPage() {
+  if (!isAdmin()) return shell('ADMIN ACCESS', '<div class="empty"><h2>Admin access only.</h2></div>');
+  const reviews = getShopReviews().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return shell('SHOP REVIEWS', `
+    <div class="admin-wrap">
+      <button class="inventory-back" type="button" data-page="admin" aria-label="Back to admin dashboard">← Back to Admin Dashboard</button>
+      <div class="section-head"><p class="eyebrow">CUSTOMER FEEDBACK</p><h1 class="section-title">SHOP REVIEWS</h1><p class="intro">Read-only view of customer feedback.</p></div>
+      ${reviewSummaryMarkup(reviews)}
+      <section class="admin-panel" aria-label="Customer shop reviews">
+        <h2>CUSTOMER REVIEWS</h2>
+        <div class="review-list">${reviewCardsMarkup(reviews, 'No shop reviews yet.')}</div>
+      </section>
+    </div>`, 'home');
 }
 
 function isLoggedIn() {
@@ -381,7 +469,7 @@ function go(page) {
     return;
   }
   // An administrator stays inside the admin interface; customer/store pages are hidden.
-  if (isAdmin() && !['admin', 'inventory'].includes(page)) {
+  if (isAdmin() && !ADMIN_PAGES.includes(page)) {
     state.page = 'admin';
     closeDrawer();
     render();
@@ -765,7 +853,7 @@ function productDetail(id) {
           <h1>${product.name}</h1>
           <div class="price">${money(product.price)}</div>
           ${product.stock !== undefined ? `<p class="product-stock ${Number(product.stock) <= 0 ? 'out' : ''}">${Number(product.stock) <= 0 ? 'Out of stock' : `${Number(product.stock)} available`}</p>` : ''}
-          <p class="intro">${product.desc}</p>
+          <p class="intro">${escapeHTML(product.desc)}</p>
 
           <div class="detail-choice-row">
             <div class="field"><label for="option">Choose character / option</label>
@@ -1321,7 +1409,7 @@ function adminInventory() {
           <button class="btn full" type="submit">ADD PRODUCT</button>
         </form>
         <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Product</th><th>Type</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead><tbody>
-        ${products.map(p=>`<tr><td>${p.name}</td><td>${p.type==='onhand'?'On-hand':'Pre-order'}</td><td>${money(p.price)}</td><td>${p.stock === undefined ? 'Not set' : Number(p.stock)}</td><td><button class="btn admin-small" data-stock-edit="${p.id}">Edit stock &amp; price</button> <button class="btn light admin-small" data-product-delete="${p.id}">Delete</button></td></tr>`).join('')}
+        ${products.map(p=>`<tr><td>${escapeHTML(p.name)}</td><td>${p.type==='onhand'?'On-hand':'Pre-order'}</td><td>${money(p.price)}</td><td>${p.stock === undefined ? 'Not set' : Number(p.stock)}</td><td><button class="btn admin-small" data-stock-edit="${p.id}">Edit stock &amp; price</button> <button class="btn light admin-small" data-description-edit="${p.id}">Edit description</button> <button class="btn light admin-small" data-product-delete="${p.id}">Delete</button></td></tr>`).join('')}
         </tbody></table></div><p class="muted">Price and stock changes are reflected in the storefront on this browser. Products with managed stock set to 0 are hidden from customers and cannot be added to cart.</p>
       </section>
     </div>`, 'home');
@@ -1353,7 +1441,7 @@ function logoutDemo() {
 
 function render() {
   // Keep an authenticated admin out of the customer storefront.
-  if (isAdmin() && !['admin', 'inventory'].includes(state.page)) state.page = 'admin';
+  if (isAdmin() && !ADMIN_PAGES.includes(state.page)) state.page = 'admin';
   if (ADMIN_PAGES.includes(state.page) && !isAdmin()) state.page = 'login';
   if (PROTECTED_PAGES.includes(state.page) && !isLoggedIn()) {
     state.page = 'login';
@@ -1367,6 +1455,7 @@ function render() {
     home,
     onhand: () => collection('onhand'),
     preorder: () => collection('preorder'),
+    reviews: reviewsPage,
     pasabuy,
     product: () => productDetail(state.selected),
     cart,
@@ -1380,7 +1469,8 @@ function render() {
     login,
     register,
     admin: adminDashboard,
-    inventory: adminInventory
+    inventory: adminInventory,
+    adminReviews: adminReviewsPage
   };
 
   const adminMode = isAdmin();
@@ -1390,8 +1480,9 @@ function render() {
   const nav = document.querySelector('#drawer nav');
   if (nav && adminMode) {
     nav.innerHTML = `
-      <button data-page="admin" class="admin-nav-active">ORDER APPROVAL & STATUS</button>
+      <button data-page="admin" class="${state.page === 'admin' ? 'admin-nav-active' : ''}">ORDER APPROVAL & STATUS</button>
       <button data-page="inventory">INVENTORY MANAGEMENT</button>
+      <button data-page="adminReviews" class="${state.page === 'adminReviews' ? 'admin-nav-active' : ''}">SHOP REVIEWS</button>
       <button data-page="logout">LOG OUT</button>
     `;
   } else if (nav && !adminMode) {
@@ -1408,6 +1499,7 @@ function render() {
       <button data-page="track">TRACK ORDER</button>
       <button class="nav-divider" data-page="about">ABOUT US</button>
       <button data-page="faq">FAQ</button>
+      <button class="nav-divider" data-page="reviews">SHOP REVIEWS</button>
       <button class="nav-divider" data-page="profile">MY PROFILE</button>
       <button data-page="logout">LOG OUT</button>
     ` : `
@@ -1416,6 +1508,7 @@ function render() {
       <button data-page="preorder">PRE-ORDER ITEMS</button>
       <button class="nav-divider" data-page="about">ABOUT US</button>
       <button data-page="faq">FAQ</button>
+      <button class="nav-divider" data-page="reviews">SHOP REVIEWS</button>
       <button class="nav-divider" data-page="login">LOGIN</button>
       <button data-page="register">CREATE ACCOUNT</button>
     `;
@@ -2007,6 +2100,43 @@ document.addEventListener('submit', event => {
   render();
 });
 
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'shopReviewForm') return;
+  event.preventDefault();
+  const session = getCurrentUser();
+  const account = session && getUsers().find(user => user.email === session.email);
+  if (!account || !isLoggedIn() || isAdmin()) return notify('Log in with a customer account to submit a review.');
+
+  const data = new FormData(event.target);
+  const ratingText = String(data.get('rating') || '');
+  const rating = Number(ratingText);
+  const comment = String(data.get('comment') || '').trim();
+  if (!/^[1-5]$/.test(ratingText) || !Number.isInteger(rating)) return notify('Choose a star rating from 1 to 5.');
+  if (!comment) return notify('Write a comment before submitting your review.');
+  if (comment.length > 1000) return notify('Your review must be 1,000 characters or fewer.');
+
+  const reviews = getShopReviews();
+  if (reviews.some(review => review.email === account.email)) return notify('This account has already submitted a shop review.');
+
+  const timestamp = new Date().toISOString();
+  reviews.unshift({
+    email: account.email,
+    name: account.name || session.name || 'Customer',
+    rating,
+    comment,
+    timestamp,
+    date: new Date(timestamp).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+  });
+
+  try {
+    localStorage.setItem('gengaShopReviews', JSON.stringify(reviews));
+    render();
+    notify('Thank you. Your shop review has been submitted.');
+  } catch (error) {
+    notify('Your review could not be saved in this browser. Check available storage and try again.');
+  }
+});
+
 /* -------------------- ADMIN ACTIONS -------------------- */
 document.addEventListener('submit', event => {
   if (event.target.id !== 'adminProductForm') return;
@@ -2075,6 +2205,28 @@ document.addEventListener('submit', event => {
   notify('Stock and price updated successfully.');
 });
 
+document.addEventListener('submit', event => {
+  if (event.target.id !== 'descriptionEditForm') return;
+  event.preventDefault();
+  if (!isAdmin()) return notify('Admin access only.');
+
+  const form = event.target;
+  const product = find(form.dataset.descriptionProduct);
+  const description = String(new FormData(form).get('description') || '').trim();
+  if (!product) return notify('Product could not be found. Please refresh and try again.');
+  if (!description) return notify('Product description cannot be empty.');
+  if (description.length > 1000) return notify('Description must be 1,000 characters or fewer.');
+
+  product.desc = description;
+  try {
+    saveProducts();
+    render();
+    notify('Product description updated successfully.');
+  } catch (error) {
+    notify('Could not save the description in this browser. Check available storage and try again.');
+  }
+});
+
 document.addEventListener('click', event => {
   // Close only when the backdrop itself or an explicit close/cancel button is clicked.
   // Do not match the backdrop through closest(): every input inside the modal is
@@ -2082,9 +2234,9 @@ document.addEventListener('click', event => {
   const target = event.target;
   const clickedBackdrop = target.classList &&
     target.classList.contains('admin-modal-backdrop') &&
-    (target.hasAttribute('data-stock-modal-close') || target.hasAttribute('data-admin-modal-close'));
+    (target.hasAttribute('data-stock-modal-close') || target.hasAttribute('data-admin-modal-close') || target.hasAttribute('data-description-modal-close'));
   const clickedCloseButton = target.closest &&
-    target.closest('button[data-stock-modal-close], button[data-admin-modal-close]');
+    target.closest('button[data-stock-modal-close], button[data-admin-modal-close], button[data-description-modal-close]');
 
   if (clickedBackdrop || clickedCloseButton) {
     const host = document.querySelector('#stockEditorHost');
@@ -2139,6 +2291,37 @@ document.addEventListener('change', event => {
   notify('Order status updated to ' + order.status + '.');
 });
 document.addEventListener('click', event => {
+  const descriptionBtn = event.target.closest('[data-description-edit]');
+  if (descriptionBtn) {
+    if (!isAdmin()) return notify('Admin access only.');
+    const product = find(descriptionBtn.dataset.descriptionEdit);
+    const host = document.querySelector('#stockEditorHost');
+    if (!product || !host) return;
+    host.innerHTML = `
+      <div class="admin-modal-backdrop" data-description-modal-close>
+        <section class="admin-modal description-modal" role="dialog" aria-modal="true" aria-labelledby="descriptionModalTitle">
+          <button type="button" class="admin-modal-close" data-description-modal-close aria-label="Close">×</button>
+          <p class="eyebrow">PRODUCT CATALOG</p>
+          <h2 id="descriptionModalTitle">Edit description</h2>
+          <p class="admin-modal-product">${escapeHTML(product.name)}</p>
+          <form id="descriptionEditForm" data-description-product="${product.id}">
+            <div class="field">
+              <label for="productDescriptionInput">Product description</label>
+              <textarea id="productDescriptionInput" name="description" rows="6" maxlength="1000" required>${escapeHTML(product.desc || '')}</textarea>
+              <small class="field-hint">Required. Maximum 1,000 characters.</small>
+            </div>
+            <div class="admin-modal-actions">
+              <button type="button" class="btn light" data-description-modal-close>Cancel</button>
+              <button type="submit" class="btn">SAVE DESCRIPTION</button>
+            </div>
+          </form>
+        </section>
+      </div>`;
+    const input = host.querySelector('#productDescriptionInput');
+    if (input) input.focus();
+    return;
+  }
+
   const stockBtn = event.target.closest('[data-stock-edit]');
   if (stockBtn) {
     if (!isAdmin()) return notify('Admin access only.');

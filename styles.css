@@ -2737,6 +2737,54 @@ button {
 .admin-danger:hover { background: #963434 !important; }
 body:has(.admin-modal-backdrop) { overflow: hidden; }
 
+/* Shop reviews */
+.review-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px 26px;
+  margin: 28px 0;
+  background: var(--teal);
+  color: var(--paper);
+  border: 2px solid var(--deep);
+  border-radius: 18px;
+  box-shadow: 5px 6px 0 var(--deep);
+}
+.review-summary > strong { font: 50px/1 var(--display); }
+.review-summary p { margin: 4px 0 0; }
+.review-stars { color: #e69b35; font-size: 23px; letter-spacing: 2px; }
+.review-summary .review-stars { color: #ffd28b; }
+.review-form-panel { background: #fff7ec; border: 1.5px solid var(--line); padding: clamp(18px, 4vw, 28px); margin: 30px 0; }
+.review-form-panel h2 { margin: 0 0 18px; color: var(--teal); font: 26px var(--display); }
+.review-form { display: grid; gap: 18px; max-width: 760px; }
+.review-form textarea, .description-modal textarea {
+  width: 100%; min-height: 120px; resize: vertical; padding: 13px 15px;
+  border: 1.5px solid var(--line); border-radius: 8px; background: white; color: var(--ink);
+}
+.review-form textarea:focus, .description-modal textarea:focus { outline: 3px solid #f2b96f; border-color: var(--teal); }
+.review-rating-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.review-rating-field legend { margin-bottom: 8px; color: var(--teal); font-weight: 800; text-transform: uppercase; }
+.review-rating-options { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 0; }
+.review-rating-options label { position: relative; display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; color: var(--muted); }
+.review-rating-options input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.review-rating-options .review-star { font-size: 0; line-height: 1; }
+.review-rating-options .review-star::before { content: '\2606'; display: block; font-size: 34px; transition: color .12s ease, transform .12s ease; }
+.review-rating-options label:has(input:checked) .review-star::before,
+.review-rating-options label:has(input:checked) ~ label .review-star::before,
+.review-rating-options label:hover .review-star::before,
+.review-rating-options label:hover ~ label .review-star::before { content: '\2605'; color: #d88720; }
+.review-rating-options label:hover .review-star::before { transform: scale(1.08); }
+.review-rating-options input:focus-visible + .review-star::before { outline: 3px solid #f2b96f; outline-offset: 3px; }
+.review-note { margin: 0; }
+.review-list { display: grid; gap: 14px; }
+.review-card { padding: 20px 22px; background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; }
+.review-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; color: var(--teal); }
+.review-card-head strong { font-size: 22px; }
+.review-card time { color: var(--muted); font-size: 16px; }
+.review-card p { margin: 10px 0 0; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.description-modal textarea { min-height: 160px; font-size: 18px; }
+
 
 /* ==========================================
    GENGA ADMIN DASHBOARD — MOBILE UI FIX
@@ -3050,6 +3098,9 @@ body:has(.admin-modal-backdrop) { overflow: hidden; }
   #stockEditorHost .admin-modal, #stockEditorHost .stock-modal, .admin-modal, .stock-modal {
     padding:17px !important; border-radius:16px !important;
   }
+  .review-summary { gap: 14px; padding: 18px; }
+  .review-summary > strong { font-size: 42px; }
+  .review-card { padding: 16px; }
 }
 
 
