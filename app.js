@@ -190,6 +190,8 @@ const state = {
   favorites: [],
   faqOpen: 0,
   orders: [],
+  editingReviewTimestamp: null,
+  orderConfirmationId: null,
   pendingAddToCart: null,
   pendingDestination: null,
   trackingQuery: ''
@@ -309,12 +311,25 @@ function reviewSummaryMarkup(reviews) {
     </section>`;
 }
 
-function reviewCardsMarkup(reviews, emptyMessage) {
+function reviewCardsMarkup(reviews, emptyMessage, editableEmail = null) {
   return reviews.length ? reviews.map(review => `
     <article class="review-card">
       <div class="review-card-head"><strong>${escapeHTML(review.name || 'Customer')}</strong><time datetime="${escapeHTML(review.timestamp || '')}">${escapeHTML(review.date || '')}</time></div>
-      <div class="review-stars" aria-label="${Number(review.rating)} out of 5 stars">${'★'.repeat(Number(review.rating))}${'☆'.repeat(5 - Number(review.rating))}</div>
-      <p>${escapeHTML(review.comment)}</p>
+      ${editableEmail && review.email === editableEmail && review.timestamp === state.editingReviewTimestamp ? `
+        <form id="editShopReviewForm" class="review-form" data-review-timestamp="${escapeHTML(review.timestamp)}">
+          <fieldset class="review-rating-field">
+            <legend>Your rating</legend>
+            <div class="review-rating-options" role="radiogroup" aria-label="Rating from 1 to 5 stars">
+              ${[5, 4, 3, 2, 1].map(rating => `<label><input type="radio" name="rating" value="${rating}" ${Number(review.rating) === rating ? 'checked' : ''} required><span class="review-star" aria-hidden="true">☆</span><span class="sr-only">${rating} ${rating === 1 ? 'star' : 'stars'}</span></label>`).join('')}
+            </div>
+          </fieldset>
+          <div class="field"><label for="editReviewComment">Your review</label><textarea id="editReviewComment" name="comment" rows="4" maxlength="1000" required>${escapeHTML(review.comment)}</textarea></div>
+          <button class="btn" type="submit">SAVE CHANGES</button>
+          <button class="btn light" type="button" data-review-edit-cancel>CANCEL</button>
+        </form>` : `
+        <div class="review-stars" aria-label="${Number(review.rating)} out of 5 stars">${'★'.repeat(Number(review.rating))}${'☆'.repeat(5 - Number(review.rating))}</div>
+        <p>${escapeHTML(review.comment)}</p>
+        ${editableEmail && review.email === editableEmail ? `<button class="btn light" type="button" data-review-edit="${escapeHTML(review.timestamp || '')}">Edit Review</button>` : ''}`}
     </article>`).join('') : `<p class="empty">${emptyMessage}</p>`;
 }
 
@@ -322,20 +337,18 @@ function reviewsPage() {
   const reviews = getShopReviews().sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   const session = getCurrentUser();
   const account = session && getUsers().find(user => user.email === session.email);
-  const alreadyReviewed = Boolean(account && reviews.some(review => review.email === account.email));
+  const editableEmail = account && !isAdmin() ? account.email : null;
 
   return shell('SHOP REVIEWS', `
     <div class="section-head">
       <p class="eyebrow">FROM OUR COLLECTOR COMMUNITY</p>
       <h1 class="section-title">SHOP REVIEWS</h1>
-      <p class="intro">See what GENGA customers have to say about their shopping experience.</p>
+      <p class="intro">We'd love to hear from you! Share your shopping experience with GENGA and let us know what you think.</p>
     </div>
     ${reviewSummaryMarkup(reviews)}
     <section class="review-form-panel" aria-labelledby="reviewFormTitle">
       <h2 id="reviewFormTitle">Share your experience</h2>
-      ${alreadyReviewed
-        ? '<p class="review-note">You have already submitted a shop review with this account.</p>'
-        : account && !isAdmin() ? `
+      ${account && !isAdmin() ? `
           <form id="shopReviewForm" class="review-form">
             <fieldset class="review-rating-field">
               <legend>Your rating</legend>
@@ -349,7 +362,7 @@ function reviewsPage() {
         : '<p class="review-note">Please <button class="inline-link" type="button" data-page="login">log in</button> with your customer account to submit a review.</p>'}
     </section>
     <section class="review-list" aria-label="Customer reviews">
-      ${reviewCardsMarkup(reviews, 'No customer reviews yet. Be the first to share your experience.')}
+      ${reviewCardsMarkup(reviews, 'No customer reviews yet. Be the first to share your experience.', editableEmail)}
     </section>
   `, 'home');
 }
@@ -360,7 +373,7 @@ function adminReviewsPage() {
   return shell('SHOP REVIEWS', `
     <div class="admin-wrap">
       <button class="inventory-back" type="button" data-page="admin" aria-label="Back to admin dashboard">← Back to Admin Dashboard</button>
-      <div class="section-head"><p class="eyebrow">CUSTOMER FEEDBACK</p><h1 class="section-title">SHOP REVIEWS</h1><p class="intro">Read-only view of customer feedback.</p></div>
+      <div class="section-head"><p class="eyebrow">CUSTOMER FEEDBACK</p><h1 class="section-title">SHOP REVIEWS</h1><p class="intro">Your customers' thoughts and experiences with GENGA.</p></div>
       ${reviewSummaryMarkup(reviews)}
       <section class="admin-panel" aria-label="Customer shop reviews">
         <h2>CUSTOMER REVIEWS</h2>
@@ -1123,6 +1136,15 @@ function history() {
               <p>Payment: <strong>${order.payment || '—'}</strong></p>
               ${order.payment === '50% Online + 50% COD' ? `<p>Online payment: <strong>${money(order.onlineDue ?? order.price/2)}</strong> · COD: <strong>${money(order.codDue ?? order.price/2)}</strong></p>` : ''}
               <div class="tracking-steps"><strong>TRACK ORDER</strong><p>${(order.tracking || [{status: order.status, date: order.date}]).map(step => `${step.status} — ${step.date}`).join('<br>')}</p></div>
+              ${state.orderConfirmationId === order.id ? `
+                <section class="checkout-contact-card" aria-label="Order help">
+                  <h2>Proof of Payment</h2>
+                  <p>Contact GENGA through your preferred channel.</p>
+                  <div class="order-contact-options">
+                    <a class="btn" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">Facebook</a>
+                    <a class="btn light" href="https://mail.google.com/" target="_blank" rel="noopener noreferrer">Email</a>
+                  </div>
+                </section>` : ''}
             </article>
           `).join('')}
         </div>
@@ -1316,7 +1338,7 @@ function register() {
 
           <div class="field">
             <label for="registerPhone">Contact number</label>
-            <input id="registerPhone" name="phone" type="tel" required placeholder="09xx xxx xxxx" autocomplete="tel">
+            <input id="registerPhone" name="phone" type="tel" inputmode="numeric" maxlength="11" required placeholder="09xxxxxxxxx" autocomplete="tel">
           </div>
           <div class="field full-field">
             <label for="registerAddress">Delivery address</label>
@@ -1387,6 +1409,7 @@ function adminDashboard() {
       ${orders.map(o=>`<tr><td data-label="Order">${o.id}<br><small>${o.date}</small></td><td data-label="Customer">${o.customerName||'Customer'}<br><small>${o.customer||''}</small></td><td data-label="Items">${o.name}</td><td data-label="Total">${money(o.price)}</td><td data-label="Payment">${o.payment||'—'}</td><td data-label="Status">${o.status}</td><td data-label="Update"><label class="admin-status-label">Change status</label><select data-order-status="${o.id}">${['Pending approval','Confirmed','Processing','Shipped','Delivered','Cancelled'].map(st=>`<option value="${st}" ${o.status===st?'selected':''}>${st}</option>`).join('')}</select></td></tr>`).join('')}
       </tbody></table></div>` : '<p class="empty">No orders yet. New orders will appear here.</p>'}</section>
       <button class="btn full" data-page="inventory">OPEN INVENTORY MANAGEMENT</button>
+      <button class="btn full" data-page="adminReviews">VIEW SHOP REVIEWS</button>
 
     </div>`, 'home');
 }
@@ -1479,6 +1502,8 @@ function render() {
 
   const nav = document.querySelector('#drawer nav');
   if (nav && adminMode) {
+    nav.classList.remove('customer-user-menu');
+    nav.classList.remove('guest-user-menu');
     nav.innerHTML = `
       <button data-page="admin" class="${state.page === 'admin' ? 'admin-nav-active' : ''}">ORDER APPROVAL & STATUS</button>
       <button data-page="inventory">INVENTORY MANAGEMENT</button>
@@ -1489,18 +1514,20 @@ function render() {
     // Guests see only public browsing pages and sign-in options.
     // Customer-only links appear only after a valid customer login.
     const loggedIn = isLoggedIn();
+    nav.classList.toggle('customer-user-menu', loggedIn);
+    nav.classList.toggle('guest-user-menu', !loggedIn);
     nav.innerHTML = loggedIn ? `
       <button data-page="home">HOME</button>
+      <button data-page="profile">MY PROFILE</button>
       <button data-page="onhand">ON-HAND ITEMS</button>
       <button data-page="preorder">PRE-ORDER ITEMS</button>
       <button data-page="favorites">FAVORITES ♡</button>
-      <button data-page="cart">YOUR CART</button>
+      <button data-page="cart">CART</button>
       <button data-page="history">TRANSACTION HISTORY</button>
       <button data-page="track">TRACK ORDER</button>
       <button class="nav-divider" data-page="about">ABOUT US</button>
       <button data-page="faq">FAQ</button>
-      <button class="nav-divider" data-page="reviews">SHOP REVIEWS</button>
-      <button class="nav-divider" data-page="profile">MY PROFILE</button>
+      <button data-page="reviews">SHOP REVIEW</button>
       <button data-page="logout">LOG OUT</button>
     ` : `
       <button data-page="home">HOME</button>
@@ -1508,8 +1535,8 @@ function render() {
       <button data-page="preorder">PRE-ORDER ITEMS</button>
       <button class="nav-divider" data-page="about">ABOUT US</button>
       <button data-page="faq">FAQ</button>
-      <button class="nav-divider" data-page="reviews">SHOP REVIEWS</button>
-      <button class="nav-divider" data-page="login">LOGIN</button>
+      <button data-page="reviews">SHOP REVIEW</button>
+      <button class="nav-divider" data-page="login">LOG IN</button>
       <button data-page="register">CREATE ACCOUNT</button>
     `;
   }
@@ -1587,6 +1614,25 @@ document.addEventListener('click', event => {
   );
 
   if (!target) return;
+
+  if (target.hasAttribute('data-review-edit')) {
+    const session = getCurrentUser();
+    const account = session && getUsers().find(user => user.email === session.email);
+    if (!account || !isLoggedIn() || isAdmin()) return;
+    const review = getShopReviews().find(item =>
+      item.timestamp === target.dataset.reviewEdit && item.email === account.email
+    );
+    if (!review) return;
+    state.editingReviewTimestamp = review.timestamp;
+    render();
+    return;
+  }
+
+  if (target.hasAttribute('data-review-edit-cancel')) {
+    state.editingReviewTimestamp = null;
+    render();
+    return;
+  }
 
   /* Navigate to a page */
   if (target.dataset.page) {
@@ -1860,6 +1906,7 @@ document.addEventListener('submit', event => {
   const email = String(data.get('email') || '')
     .trim()
     .toLowerCase();
+  const phone = String(data.get('phone') || '');
 
   const password = String(data.get('password') || '');
   const confirmPassword = String(
@@ -1874,6 +1921,12 @@ document.addEventListener('submit', event => {
 
   if (!name || !email) {
     error.textContent = 'Please enter your name and email.';
+    error.style.display = 'block';
+    return;
+  }
+
+  if (!/^09\d{9}$/.test(phone)) {
+    error.textContent = 'Please enter a valid 11-digit Philippine mobile number starting with 09.';
     error.style.display = 'block';
     return;
   }
@@ -1903,7 +1956,7 @@ document.addEventListener('submit', event => {
     name,
     email,
     password,
-    phone: String(data.get('phone') || '').trim(),
+    phone,
     address: String(data.get('address') || '').trim(),
     role: 'customer'
   });
@@ -2085,6 +2138,7 @@ document.addEventListener('submit', event => {
 
   saveUserData();
 
+  state.orderConfirmationId = createdOrder.id;
   state.page = 'history';
   render();
 
@@ -2101,7 +2155,7 @@ document.addEventListener('submit', event => {
 });
 
 document.addEventListener('submit', event => {
-  if (event.target.id !== 'shopReviewForm') return;
+  if (!['shopReviewForm', 'editShopReviewForm'].includes(event.target.id)) return;
   event.preventDefault();
   const session = getCurrentUser();
   const account = session && getUsers().find(user => user.email === session.email);
@@ -2114,9 +2168,29 @@ document.addEventListener('submit', event => {
   if (!/^[1-5]$/.test(ratingText) || !Number.isInteger(rating)) return notify('Choose a star rating from 1 to 5.');
   if (!comment) return notify('Write a comment before submitting your review.');
   if (comment.length > 1000) return notify('Your review must be 1,000 characters or fewer.');
+  if (event.target.id === 'editShopReviewForm') {
+    const timestamp = event.target.dataset.reviewTimestamp;
+    const savedReviews = readStorage('gengaShopReviews', []);
+    const review = Array.isArray(savedReviews) && savedReviews.find(item =>
+      item && item.timestamp === timestamp && item.email === account.email
+    );
+    if (!review) return notify('This review could not be found or is not yours to edit.');
+
+    try {
+      review.rating = rating;
+      review.comment = comment;
+      localStorage.setItem('gengaShopReviews', JSON.stringify(savedReviews));
+      state.editingReviewTimestamp = null;
+      render();
+      notify('Your shop review has been updated.');
+    } catch (error) {
+      notify('Your review could not be saved in this browser. Check available storage and try again.');
+    }
+    return;
+  }
+  if (event.target.dataset.submitting === 'true') return;
 
   const reviews = getShopReviews();
-  if (reviews.some(review => review.email === account.email)) return notify('This account has already submitted a shop review.');
 
   const timestamp = new Date().toISOString();
   reviews.unshift({
@@ -2127,13 +2201,34 @@ document.addEventListener('submit', event => {
     timestamp,
     date: new Date(timestamp).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
   });
+  event.target.dataset.submitting = 'true';
+  const submitButton = event.target.querySelector('[type="submit"]');
+  if (submitButton) submitButton.disabled = true;
 
   try {
     localStorage.setItem('gengaShopReviews', JSON.stringify(reviews));
     render();
     notify('Thank you. Your shop review has been submitted.');
   } catch (error) {
+    delete event.target.dataset.submitting;
+    if (submitButton) submitButton.disabled = false;
     notify('Your review could not be saved in this browser. Check available storage and try again.');
+  }
+});
+
+document.addEventListener('input', event => {
+  if (event.target.id !== 'registerPhone') return;
+  const error = document.querySelector('#registerError');
+  if (!error) return;
+
+  const phone = event.target.value;
+  const phoneWarning = 'Please enter a valid 11-digit Philippine mobile number starting with 09.';
+  if (phone && !/^09\d{9}$/.test(phone)) {
+    error.textContent = phoneWarning;
+    error.style.display = 'block';
+  } else if (error.textContent === phoneWarning) {
+    error.textContent = '';
+    error.style.display = 'none';
   }
 });
 
